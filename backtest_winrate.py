@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-BACKTEST  —  scoring method: MAX EXPECTED PROFIT   (win_rate × avg_payoff)
+BACKTEST  —  scoring method: MAX RELIABILITY   (win_rate only)
 
-This picks the entry/exit time with the highest probability-weighted profit.
-It rewards big average payoffs even if the win rate is below 50% — i.e. it
-will happily choose a setup that loses most days but wins big occasionally.
+This picks the entry/exit time that wins the highest PERCENTAGE of the time,
+regardless of how big the wins are. Average payoff is used only to break ties
+between pairs with identical win rates. Use this to find the steadiest setup.
 
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  CHANGE THIS ONE LINE to test any window (e.g. 100, 250, 500 days):   ║
@@ -14,14 +14,14 @@ will happily choose a setup that loses most days but wins big occasionally.
 LOOKBACK_DAYS = 100          # <───── EDIT ONLY THIS LINE (calendar days to test)
 
 # ──────────────────────────────────────────────────────────────────────────
-# Engine below. Run with:   python custom_backtest.py
+# Engine below. Run with:   python backtest_winrate.py
 # ──────────────────────────────────────────────────────────────────────────
 from backtest_engine import run
 
 
 def score_key(s):
-    """Rank by win_rate × avg_payoff (tiny win_rate tiebreaker when avg <= 0)."""
-    return s["wr"] * max(s["avg"], 0.0) + s["wr"] * 0.001
+    """Rank by win_rate first; avg_payoff only breaks ties."""
+    return (s["wr"], s["avg"])
 
 
 def eligible(s):
@@ -32,8 +32,8 @@ def eligible(s):
 if __name__ == "__main__":
     run(
         lookback_days=LOOKBACK_DAYS,
-        method_label="MAX EXPECTED PROFIT (win_rate × avg_payoff)",
+        method_label="MAX RELIABILITY (win_rate only)",
         score_key=score_key,
         eligible=eligible,
-        file_tag="expProfit",
+        file_tag="winRate",
     )
