@@ -35,7 +35,7 @@ Saves two files to backtest_results/ (with contracts + cost columns):
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
-LOOKBACK_DAYS = 100          # <───── window to test (calendar days)
+LOOKBACK_DAYS = 365          # <───── window to test (calendar days)
 TARGET_SPEND  = 1.00         # <───── minimum premium per share per trade
 
 # ──────────────────────────────────────────────────────────────────────────
