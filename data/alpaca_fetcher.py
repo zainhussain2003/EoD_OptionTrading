@@ -34,7 +34,7 @@ class AlpacaFetcher:
     @classmethod
     def from_env(cls) -> 'AlpacaFetcher | None':
         api_key = os.getenv('ALPACA_API_KEY', '')
-        secret_key = os.getenv('ALPACA_SECRET_KEY', '')
+        secret_key = os.getenv('ALPACA_API_SECRET', '')
         if not api_key or not secret_key:
             return None
         try:
