@@ -14,7 +14,7 @@ the dependable setups it still maximizes profit.
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
-LOOKBACK_DAYS = 100          # <───── window to test
+LOOKBACK_DAYS = 365          # <───── window to test
 MIN_WIN_RATE  = 0.55         # <───── reliability floor (0.55 = 55% win rate)
 
 # ──────────────────────────────────────────────────────────────────────────

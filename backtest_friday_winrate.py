@@ -16,7 +16,7 @@ Saves two files to backtest_results/:
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
-LOOKBACK_DAYS = 100          # <───── EDIT ONLY THIS LINE (calendar days to test)
+LOOKBACK_DAYS = 365          # <───── EDIT ONLY THIS LINE (calendar days to test)
 
 # ──────────────────────────────────────────────────────────────────────────
 # Engine below. Run with:   python backtest_friday_winrate.py

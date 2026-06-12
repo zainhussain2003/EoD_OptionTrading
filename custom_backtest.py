@@ -11,7 +11,7 @@ will happily choose a setup that loses most days but wins big occasionally.
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
-LOOKBACK_DAYS = 100          # <───── EDIT ONLY THIS LINE (calendar days to test)
+LOOKBACK_DAYS = 365          # <───── EDIT ONLY THIS LINE (calendar days to test)
 
 # ──────────────────────────────────────────────────────────────────────────
 # Engine below. Run with:   python custom_backtest.py
