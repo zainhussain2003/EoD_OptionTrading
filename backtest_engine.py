@@ -96,11 +96,16 @@ def build_representatives(records: list) -> tuple[dict, dict]:
     return reps, meta
 
 
-def compute_pair_stats(reps: dict) -> dict:
+def compute_pair_stats(reps: dict, size_fn=None) -> dict:
     """Stats for EVERY (entry, exit) pair across all dates — feeds the heatmaps.
 
     Returns {(entry_m, exit_m): {wr, wins, n, avg, total}} where avg/total are
     per-share (multiply by CONTRACT_MULTIPLIER for dollars per contract).
+
+    size_fn(entry_price) -> int contracts. When given, each date's payoff is
+    scaled by the contracts bought (per-share move × contracts), so avg/total
+    reflect position-sized dollars/100. Wins are unaffected (the scale factor
+    is always positive). Default None = 1 contract (original behaviour).
     """
     payoffs = defaultdict(list)
     for d, prices in reps.items():
@@ -108,11 +113,12 @@ def compute_pair_stats(reps: dict) -> dict:
             ep, em = price_at(prices, entry_m)
             if ep is None or ep <= 0:
                 continue
+            qty = size_fn(ep) if size_fn else 1
             for exit_m in range(entry_m + MIN_HOLD, 960, ENTRY_STEP):  # … → 3:59
                 xp, _ = price_at(prices, exit_m, after=em)
                 if xp is None:
                     continue
-                payoffs[(entry_m, exit_m)].append(xp - ep)
+                payoffs[(entry_m, exit_m)].append((xp - ep) * qty)
 
     stats = {}
     for (en, ex), pl in payoffs.items():
@@ -140,8 +146,14 @@ def find_optimal_pair(stats: dict, score_key, eligible):
     return ranked[0], ranked
 
 
-def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int) -> list:
-    """One row per MWF date: the ATM call bought at entry_m, sold at exit_m."""
+def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int,
+                size_fn=None) -> list:
+    """One row per MWF date: the ATM call bought at entry_m, sold at exit_m.
+
+    size_fn(entry_price) -> int contracts. When given, pnl_dollars is scaled by
+    the contract count and each row carries `contracts` + `cost_dollars`.
+    Default None = 1 contract (original behaviour).
+    """
     rows = []
     for d in sorted(reps.keys()):
         prices = reps[d]
@@ -156,11 +168,13 @@ def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int) 
                 "source": "REAL" if rec["source"] == SOURCE_REAL else "SIM",
                 "entry_time": minute_to_str(entry_m), "entry_price": "",
                 "exit_time": minute_to_str(exit_m), "exit_price": "",
-                "payoff_per_share": "", "pnl_dollars": "",
+                "payoff_per_share": "", "contracts": "", "cost_dollars": "",
+                "pnl_dollars": "",
                 "profitable": "", "note": "no usable price at entry/exit",
             })
             continue
 
+        qty = size_fn(ep) if size_fn else 1
         payoff = xp - ep
         rows.append({
             "date": str(d), "ticker": ticker,
@@ -169,7 +183,9 @@ def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int) 
             "entry_time": minute_to_str(em), "entry_price": round(ep, 4),
             "exit_time": minute_to_str(xm), "exit_price": round(xp, 4),
             "payoff_per_share": round(payoff, 4),
-            "pnl_dollars": round(payoff * CONTRACT_MULTIPLIER, 2),
+            "contracts": qty,
+            "cost_dollars": round(ep * CONTRACT_MULTIPLIER * qty, 2),
+            "pnl_dollars": round(payoff * CONTRACT_MULTIPLIER * qty, 2),
             "profitable": payoff > 0, "note": "",
         })
     return rows
@@ -180,13 +196,17 @@ def summarize(rows: list) -> dict:
     traded = [r for r in rows if r["pnl_dollars"] != ""]
     if not traded:
         return {"n": 0, "wins": 0, "win_rate": 0.0, "total_pnl": 0.0,
-                "avg_pnl": 0.0, "best": 0.0, "worst": 0.0, "n_skipped": len(rows)}
+                "avg_pnl": 0.0, "best": 0.0, "worst": 0.0, "total_cost": 0.0,
+                "n_skipped": len(rows)}
     pnls = [r["pnl_dollars"] for r in traded]
     wins = sum(1 for p in pnls if p > 0)
+    costs = [r["cost_dollars"] for r in traded
+             if isinstance(r.get("cost_dollars"), (int, float))]
     return {
         "n": len(traded), "wins": wins, "win_rate": wins / len(traded),
         "total_pnl": sum(pnls), "avg_pnl": sum(pnls) / len(pnls),
         "best": max(pnls), "worst": min(pnls),
+        "total_cost": sum(costs) if costs else 0.0,
         "n_skipped": len(rows) - len(traded),
     }
 
@@ -262,7 +282,7 @@ def print_heatmaps(ticker, stats, optimal_key):
                 stats, tot_val, tot_col, 7, optimal_key)
 
 
-def print_ticker_block(ticker, best, rows, summ, result):
+def print_ticker_block(ticker, best, rows, summ, result, show_qty=False):
     print(bold("=" * 78))
     print(bold(f"  {ticker}"))
     print(bold("=" * 78))
@@ -281,21 +301,25 @@ def print_ticker_block(ticker, best, rows, summ, result):
           f"Sell {green(minute_to_str(ex))}")
     print(f"  Data source      : {src_tag}")
     print()
-    print(f"  {'Date':<12} {'Strike':>8} {'Src':>4} {'Entry':>8} {'Buy$':>7} "
+    qh = f"{'Qty':>4} " if show_qty else ""
+    qs = f"{'-'*4} " if show_qty else ""
+    print(f"  {'Date':<12} {'Strike':>8} {'Src':>4} {qh}{'Entry':>8} {'Buy$':>7} "
           f"{'Exit':>8} {'Sell$':>7} {'P&L/sh':>8} {'P&L $':>9}  Result")
-    print(f"  {'-'*12} {'-'*8} {'-'*4} {'-'*8} {'-'*7} {'-'*8} {'-'*7} "
+    print(f"  {'-'*12} {'-'*8} {'-'*4} {qs}{'-'*8} {'-'*7} {'-'*8} {'-'*7} "
           f"{'-'*8} {'-'*9}  {'-'*6}")
     for r in rows:
         if r["pnl_dollars"] == "":
+            qcell = f"{'—':>4} " if show_qty else ""
             print(f"  {r['date']:<12} {r['strike']:>8.1f} {r['source']:>4} "
-                  f"{'—':>8} {'—':>7} {'—':>8} {'—':>7} {'—':>8} {'—':>9}  "
+                  f"{qcell}{'—':>8} {'—':>7} {'—':>8} {'—':>7} {'—':>8} {'—':>9}  "
                   + yellow("skip"))
             continue
         res = green("WIN ") if r["profitable"] else red("LOSS")
         pnl = r["pnl_dollars"]
         pnl_s = green(f"${pnl:+.2f}") if pnl > 0 else red(f"${pnl:+.2f}")
+        qcell = f"{r.get('contracts', 1):>4} " if show_qty else ""
         print(f"  {r['date']:<12} {r['strike']:>8.1f} {r['source']:>4} "
-              f"{r['entry_time']:>8} {r['entry_price']:>7.2f} "
+              f"{qcell}{r['entry_time']:>8} {r['entry_price']:>7.2f} "
               f"{r['exit_time']:>8} {r['exit_price']:>7.2f} "
               f"{r['payoff_per_share']:>+8.3f} {pnl_s:>9}  {res}")
 
@@ -311,6 +335,12 @@ def print_ticker_block(ticker, best, rows, summ, result):
     print(f"           best day: ${summ['best']:+.2f}   "
           f"worst day: ${summ['worst']:+.2f}   "
           f"skipped (no data): {summ['n_skipped']}")
+    if show_qty:
+        cost = summ.get("total_cost", 0.0)
+        roi = (summ["total_pnl"] / cost) if cost else 0.0
+        roi_s = (green if roi >= 0 else red)(f"{roi:+.1%}")
+        print(f"           premium spent: ${cost:,.2f}   "
+              f"return on spend: {roi_s}")
     print()
 
 
@@ -495,8 +525,13 @@ def _combo_stats(day_data, tickers, combo_days):
 
 
 def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
-                    source_label, lookback_days, path):
-    """CSV output for the by-day backtest."""
+                    source_label, lookback_days, path, sized=False):
+    """CSV output for the by-day backtest.
+
+    sized — when True, the detail and summary sections gain position-sizing
+    columns (contracts, cost, return-on-spend). Default False keeps the
+    original schema unchanged.
+    """
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow([f"# Backtest method: {method_label}  (by day of week)"])
@@ -509,42 +544,55 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
         w.writerow([])
 
         # Per-day detail rows
+        size_cols = ["contracts", "cost_dollars"] if sized else []
         w.writerow(["DETAIL — one row per MWF date; each day uses its own optimal timing"])
         w.writerow(["day_of_week", "date", "ticker", "contract_symbol", "strike",
                     "source", "entry_time", "entry_price", "exit_time", "exit_price",
-                    "payoff_per_share", "pnl_dollars", "profitable", "note"])
+                    "payoff_per_share"] + size_cols +
+                   ["pnl_dollars", "profitable", "note"])
         for day_name, _ in days:
             for ticker in tickers:
                 dr = day_data.get((ticker, day_name))
                 if dr is None:
                     continue
                 for r in dr["rows"]:
+                    size_vals = ([r.get("contracts", ""), r.get("cost_dollars", "")]
+                                 if sized else [])
                     w.writerow([day_name, r["date"], r["ticker"], r["contract_symbol"],
                                 r["strike"], r["source"], r["entry_time"], r["entry_price"],
-                                r["exit_time"], r["exit_price"], r["payoff_per_share"],
-                                r["pnl_dollars"], r["profitable"], r["note"]])
+                                r["exit_time"], r["exit_price"], r["payoff_per_share"]]
+                               + size_vals +
+                               [r["pnl_dollars"], r["profitable"], r["note"]])
         w.writerow([])
 
         # Per-ticker × per-day summary
+        sum_cols = ["premium_spent", "return_on_spend"] if sized else []
         w.writerow(["SUMMARY BY DAY"])
         w.writerow(["day_of_week", "ticker", "optimal_entry", "optimal_exit",
                     "trades", "wins", "win_rate", "total_pnl_dollars", "avg_pnl_dollars",
-                    "best_day", "worst_day", "skipped_no_data"])
+                    "best_day", "worst_day", "skipped_no_data"] + sum_cols)
         for day_name, _ in days:
             for ticker in tickers:
                 dr = day_data.get((ticker, day_name))
                 if dr is None:
                     w.writerow([day_name, ticker, "—", "—", 0, 0,
-                                "0.0000", 0.0, 0.0, 0.0, 0.0, 0])
+                                "0.0000", 0.0, 0.0, 0.0, 0.0, 0]
+                               + (["", ""] if sized else []))
                     continue
                 s = dr["summ"]
+                if sized:
+                    cost = s.get("total_cost", 0.0)
+                    roi = (s["total_pnl"] / cost) if cost else 0.0
+                    extra = [round(cost, 2), f"{roi:.4f}"]
+                else:
+                    extra = []
                 w.writerow([day_name, ticker,
                             minute_to_str(dr["best"]["entry"]),
                             minute_to_str(dr["best"]["exit"]),
                             s["n"], s["wins"], f"{s['win_rate']:.4f}",
                             round(s["total_pnl"], 2), round(s["avg_pnl"], 2),
                             round(s["best"], 2), round(s["worst"], 2),
-                            s["n_skipped"]])
+                            s["n_skipped"]] + extra)
         w.writerow([])
 
         # Combo comparison — per equity, then all combined
@@ -565,12 +613,15 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
 
 
 def run_byday(lookback_days, method_label, score_key, eligible,
-              file_tag, header_extra="", days=None, combos=None):
+              file_tag, header_extra="", days=None, combos=None, size_fn=None):
     """Day-of-week driver: finds a separate optimal (entry, exit) per weekday.
 
-    days   — list of (day_name, weekday_int); defaults to Mon/Wed/Fri.
-    combos — list of (label, [day_name, ...]) bundles for the comparison table;
-             defaults to all 7 Mon/Wed/Fri combinations.
+    days    — list of (day_name, weekday_int); defaults to Mon/Wed/Fri.
+    combos  — list of (label, [day_name, ...]) bundles for the comparison table;
+              defaults to all 7 Mon/Wed/Fri combinations.
+    size_fn — optional size_fn(entry_price) -> int contracts. When given, P&L
+              and the optimizer reflect position sizing, and contract/cost
+              columns appear in the output. Default None = 1 contract.
     The combo table is printed per equity and then for all tickers combined.
     """
     global LOOKBACK_DAYS
@@ -624,13 +675,13 @@ def run_byday(lookback_days, method_label, score_key, eligible,
                 day_data[(ticker, day_name)] = None
                 continue
             reps, meta = build_representatives(day_recs)
-            stats = compute_pair_stats(reps)
+            stats = compute_pair_stats(reps, size_fn)
             best, _ = find_optimal_pair(stats, score_key, eligible)
             if best is None:
                 day_data[(ticker, day_name)] = None
                 continue
             en, ex = best["entry"], best["exit"]
-            rows = per_day_pnl(ticker, reps, meta, en, ex)
+            rows = per_day_pnl(ticker, reps, meta, en, ex, size_fn)
             summ = summarize(rows)
             day_data[(ticker, day_name)] = {
                 "best": best, "rows": rows, "summ": summ,
@@ -672,7 +723,8 @@ def run_byday(lookback_days, method_label, score_key, eligible,
                               "(insufficient data or no pair met the criteria)."))
                     continue
                 mock = _MockResult(_source_from_rows(dr["rows"]))
-                print_ticker_block(ticker, dr["best"], dr["rows"], dr["summ"], mock)
+                print_ticker_block(ticker, dr["best"], dr["rows"], dr["summ"], mock,
+                                   show_qty=(size_fn is not None))
                 print_heatmaps(ticker, dr["stats"], dr["optimal_key"])
             # This equity's own combo table, right after its day blocks
             _print_combo_table([ticker], f"{ticker} — DAY COMBINATION COMPARISON")
@@ -699,7 +751,8 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     txt_path = os.path.join(RESULTS_DIR, f"{base}.txt")
 
     _save_byday_csv(method_label, header_extra, day_data, config.tickers,
-                    DAYS, COMBOS, source_label, lookback_days, csv_path)
+                    DAYS, COMBOS, source_label, lookback_days, csv_path,
+                    sized=(size_fn is not None))
 
     hdr = (f"BACKTEST BY DAY — {method_label}\n"
            f"Lookback = {lookback_days} calendar days\n"
