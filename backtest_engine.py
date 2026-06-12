@@ -12,7 +12,9 @@ and calls run(). All of them produce the same per-day P&L table, the same summar
 three heatmaps per ticker (win-rate %, win count, P&L), and a timestamped CSV.
 """
 
+import contextlib
 import csv
+import io
 import os
 import sys
 from collections import defaultdict
@@ -453,5 +455,241 @@ def run(lookback_days, method_label, score_key, eligible,
     print(bold("─" * 78))
     print(f"  {cyan('Saved:')} {bold(path)}")
     print(f"  Open it in Excel/Sheets — per-day detail on top, summary at the bottom.")
+    print(bold("─" * 78))
+    print()
+
+
+# ── Day-of-week helpers ────────────────────────────────────────────────────
+
+class _MockResult:
+    """Lightweight stand-in for BacktestResult used only to carry a source tag."""
+    def __init__(self, src: str):
+        self.primary_source = src
+
+
+def _source_from_rows(rows: list) -> str:
+    srcs = {r["source"] for r in rows if r["pnl_dollars"] != ""}
+    if "REAL" in srcs and "SIM" in srcs:
+        return "MIXED"
+    if "REAL" in srcs:
+        return "REAL"
+    if "SIM" in srcs:
+        return "SIMULATED"
+    return "NONE"
+
+
+def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
+                    source_label, lookback_days, path):
+    """CSV output for the by-day backtest."""
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow([f"# Backtest method: {method_label}  (by day of week)"])
+        if header_extra:
+            w.writerow([f"# {header_extra}"])
+        w.writerow([f"# Lookback = {lookback_days} calendar days"])
+        w.writerow([f"# Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  "
+                    f"data source: {source_label}"])
+        w.writerow([f"# P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares"])
+        w.writerow([])
+
+        # Per-day detail rows
+        w.writerow(["DETAIL — one row per MWF date; each day uses its own optimal timing"])
+        w.writerow(["day_of_week", "date", "ticker", "contract_symbol", "strike",
+                    "source", "entry_time", "entry_price", "exit_time", "exit_price",
+                    "payoff_per_share", "pnl_dollars", "profitable", "note"])
+        for day_name, _ in days:
+            for ticker in tickers:
+                dr = day_data.get((ticker, day_name))
+                if dr is None:
+                    continue
+                for r in dr["rows"]:
+                    w.writerow([day_name, r["date"], r["ticker"], r["contract_symbol"],
+                                r["strike"], r["source"], r["entry_time"], r["entry_price"],
+                                r["exit_time"], r["exit_price"], r["payoff_per_share"],
+                                r["pnl_dollars"], r["profitable"], r["note"]])
+        w.writerow([])
+
+        # Per-ticker × per-day summary
+        w.writerow(["SUMMARY BY DAY"])
+        w.writerow(["day_of_week", "ticker", "optimal_entry", "optimal_exit",
+                    "trades", "wins", "win_rate", "total_pnl_dollars", "avg_pnl_dollars",
+                    "best_day", "worst_day", "skipped_no_data"])
+        for day_name, _ in days:
+            for ticker in tickers:
+                dr = day_data.get((ticker, day_name))
+                if dr is None:
+                    w.writerow([day_name, ticker, "—", "—", 0, 0,
+                                "0.0000", 0.0, 0.0, 0.0, 0.0, 0])
+                    continue
+                s = dr["summ"]
+                w.writerow([day_name, ticker,
+                            minute_to_str(dr["best"]["entry"]),
+                            minute_to_str(dr["best"]["exit"]),
+                            s["n"], s["wins"], f"{s['win_rate']:.4f}",
+                            round(s["total_pnl"], 2), round(s["avg_pnl"], 2),
+                            round(s["best"], 2), round(s["worst"], 2),
+                            s["n_skipped"]])
+        w.writerow([])
+
+        # Combo comparison
+        w.writerow(["DAY COMBINATION COMPARISON"])
+        w.writerow(["combination", "days_included", "trades", "wins",
+                    "win_rate", "total_pnl_dollars", "avg_pnl_dollars"])
+        for combo_name, combo_days in combos:
+            pnls = [r["pnl_dollars"]
+                    for tk in tickers
+                    for dn in combo_days
+                    for r in (day_data.get((tk, dn)) or {}).get("rows", [])
+                    if r["pnl_dollars"] != ""]
+            if not pnls:
+                w.writerow([combo_name, "+".join(combo_days), 0, 0,
+                            "0.0000", 0.0, 0.0])
+                continue
+            n = len(pnls)
+            wins = sum(1 for p in pnls if p > 0)
+            total = sum(pnls)
+            w.writerow([combo_name, "+".join(combo_days), n, wins,
+                        f"{wins/n:.4f}", round(total, 2), round(total / n, 2)])
+
+
+def run_byday(lookback_days, method_label, score_key, eligible,
+              file_tag, header_extra=""):
+    """Day-of-week driver: finds a separate optimal (entry, exit) for Mon, Wed, Fri."""
+    global LOOKBACK_DAYS
+    LOOKBACK_DAYS = lookback_days
+
+    config = Config()
+    config.backtest_days = lookback_days
+
+    DAYS = [("Monday", 0), ("Wednesday", 2), ("Friday", 4)]
+    COMBOS = [
+        ("Monday only",    ["Monday"]),
+        ("Wednesday only", ["Wednesday"]),
+        ("Friday only",    ["Friday"]),
+        ("Mon + Wed",      ["Monday", "Wednesday"]),
+        ("Mon + Fri",      ["Monday", "Friday"]),
+        ("Wed + Fri",      ["Wednesday", "Friday"]),
+        ("All 3 days",     ["Monday", "Wednesday", "Friday"]),
+    ]
+
+    print(bold("\n" + "═" * 78))
+    print(bold(f"  BACKTEST BY DAY  —  {method_label}"))
+    print(bold(f"  Lookback window: {lookback_days} calendar days"))
+    if header_extra:
+        print(f"  {header_extra}")
+    print(bold("═" * 78))
+
+    fetcher, source_label = get_fetcher()
+    print(f"  Data source: {source_label}")
+    print(f"  Tickers: {', '.join(config.tickers)}")
+    print(f"  Finding optimal timing separately for Monday, Wednesday, Friday.\n")
+
+    backtester = Backtester(fetcher, config)
+    backtester.capture_daily = True
+    backtester.run(config.tickers)
+
+    # ── Compute per-ticker × per-weekday stats ─────────────────────────────
+    day_data = {}   # {(ticker, day_name): {best, rows, summ, stats, optimal_key} | None}
+
+    for ticker in config.tickers:
+        records = backtester.daily_capture.get(ticker, [])
+        for day_name, wday in DAYS:
+            day_recs = [r for r in records if r["date"].weekday() == wday]
+            if len(day_recs) < MIN_SAMPLES:
+                day_data[(ticker, day_name)] = None
+                continue
+            reps, meta = build_representatives(day_recs)
+            stats = compute_pair_stats(reps)
+            best, _ = find_optimal_pair(stats, score_key, eligible)
+            if best is None:
+                day_data[(ticker, day_name)] = None
+                continue
+            en, ex = best["entry"], best["exit"]
+            rows = per_day_pnl(ticker, reps, meta, en, ex)
+            summ = summarize(rows)
+            day_data[(ticker, day_name)] = {
+                "best": best, "rows": rows, "summ": summ,
+                "stats": stats, "optimal_key": (en, ex),
+            }
+
+    # ── Print routines (called twice: terminal + plain-text capture) ───────
+    def _print_combo_table():
+        print(bold("\n" + "═" * 78))
+        print(bold("  DAY COMBINATION COMPARISON"))
+        print(bold("  P&L if you traded only the selected day(s),"))
+        print(bold("  each at that day's own optimal time  (1 contract per ticker)"))
+        print(bold("═" * 78))
+        print(f"  {'Combination':<22}  {'Trades':>6}  {'Wins':>5}  {'Win%':>6}  "
+              f"{'Total P&L':>12}  {'Avg/trade':>10}")
+        print(f"  {'-'*22}  {'-'*6}  {'-'*5}  {'-'*6}  {'-'*12}  {'-'*10}")
+        for combo_name, combo_days in COMBOS:
+            pnls = [r["pnl_dollars"]
+                    for tk in config.tickers
+                    for dn in combo_days
+                    for r in (day_data.get((tk, dn)) or {}).get("rows", [])
+                    if r["pnl_dollars"] != ""]
+            if not pnls:
+                print(f"  {combo_name:<22}  (no data)")
+                continue
+            n = len(pnls)
+            wins = sum(1 for p in pnls if p > 0)
+            total = sum(pnls)
+            tot_s = (green if total >= 0 else red)(f"${total:+,.2f}")
+            print(f"  {combo_name:<22}  {n:>6}  {wins:>5}  {wins/n:>5.1%}  "
+                  f"{tot_s:>12}  ${total/n:>+9.2f}")
+        print()
+
+    def _print_all():
+        for ticker in config.tickers:
+            print(bold("\n" + "═" * 78))
+            print(bold(f"  {ticker}"))
+            print(bold("═" * 78))
+            for day_name, _ in DAYS:
+                dr = day_data.get((ticker, day_name))
+                print(f"\n  {'─' * 4} {day_name} {'─' * 4}")
+                if dr is None:
+                    print(red("  No optimal pair found "
+                              "(insufficient data or no pair met the criteria)."))
+                    continue
+                mock = _MockResult(_source_from_rows(dr["rows"]))
+                print_ticker_block(ticker, dr["best"], dr["rows"], dr["summ"], mock)
+                print_heatmaps(ticker, dr["stats"], dr["optimal_key"])
+        _print_combo_table()
+
+    # Print to terminal (ANSI colours if TTY)
+    _print_all()
+
+    # Capture plain-text version for the .txt file
+    # (redirect_stdout to StringIO → sys.stdout.isatty() returns False →
+    #  _c() emits no ANSI codes, so the captured string is clean plain text)
+    txt_buf = io.StringIO()
+    with contextlib.redirect_stdout(txt_buf):
+        _print_all()
+    txt_content = txt_buf.getvalue()
+
+    # ── Save files ─────────────────────────────────────────────────────────
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
+    base = f"backtest_{file_tag}_{lookback_days}days_{stamp}"
+    csv_path = os.path.join(RESULTS_DIR, f"{base}.csv")
+    txt_path = os.path.join(RESULTS_DIR, f"{base}.txt")
+
+    _save_byday_csv(method_label, header_extra, day_data, config.tickers,
+                    DAYS, COMBOS, source_label, lookback_days, csv_path)
+
+    hdr = (f"BACKTEST BY DAY — {method_label}\n"
+           f"Lookback = {lookback_days} calendar days\n"
+           f"Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  {source_label}\n"
+           f"P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares\n"
+           + "=" * 78 + "\n\n")
+    with open(txt_path, "w", encoding="utf-8") as f:
+        f.write(hdr)
+        f.write(txt_content)
+
+    print(bold("─" * 78))
+    print(f"  {cyan('Saved CSV:')} {bold(csv_path)}")
+    print(f"  {cyan('Saved TXT:')} {bold(txt_path)}")
+    print(f"  CSV: structured data (detail + summary + combos).")
+    print(f"  TXT: full heatmap output in plain text — open in any text editor.")
     print(bold("─" * 78))
     print()
