@@ -20,6 +20,10 @@ class Backtester:
     def __init__(self, fetcher, config: Config):
         self.fetcher = fetcher
         self.config = config
+        # Optional per-day capture (used by custom_backtest.py for day-by-day P&L).
+        # Off by default so the standard --backtest path is unchanged.
+        self.capture_daily = False
+        self.daily_capture: dict = defaultdict(list)
 
     def run(self, tickers: list[str] | None = None) -> list[BacktestResult]:
         tickers = tickers or self.config.tickers
@@ -109,6 +113,16 @@ class Backtester:
 
                 if not minute_prices:
                     continue
+
+                if self.capture_daily:
+                    self.daily_capture[ticker].append({
+                        'date': mwf_date,
+                        'strike': atm_strike,
+                        'contract': contract_sym,
+                        'source': source,
+                        'spot_3pm': spot_3pm,
+                        'prices': dict(minute_prices),
+                    })
 
                 self._accumulate_payoffs(minute_prices, payoffs, prefix=(atm_strike,))
 
