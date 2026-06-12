@@ -5,9 +5,15 @@ Systematic MWF ATM call trading: find the optimal entry/exit time, trade every w
 
 Usage:
   python main.py --backtest              Find optimal buy/sell time from history
+  python main.py --backtest --brief      Backtest with a condensed provenance summary
   python main.py --scan                  Show current ATM prices (run at optimal time)
   python main.py --scan --force-run      Show prices anytime (for testing)
   python main.py --log                   Show trade history and P&L
+
+The --backtest output includes a DATA PROVENANCE report showing, per ticker,
+exactly which numbers came from real Alpaca option prices vs Black-Scholes
+estimates — so you know how much to trust each result. Use --brief to hide the
+per-date breakdown and show only the summary.
 """
 
 import argparse
@@ -42,7 +48,10 @@ def _get_fetcher(args):
 def cmd_backtest(args) -> None:
     from config import Config
     from analysis.backtester import Backtester
-    from output.display import print_header, print_backtest_results, print_heatmap, print_footer
+    from output.display import (
+        print_header, print_backtest_results, print_heatmap,
+        print_data_source_report, print_footer,
+    )
 
     config = Config()
     if args.tickers:
@@ -62,6 +71,14 @@ def cmd_backtest(args) -> None:
     elapsed = time.time() - start
 
     print_backtest_results(results)
+
+    # Detailed data-provenance report per ticker (real vs simulated prices)
+    print(f"\n{'#' * 64}")
+    print("#  DATA PROVENANCE  —  where every number came from")
+    print(f"{'#' * 64}")
+    show_dates = not args.brief
+    for result in results:
+        print_data_source_report(result, show_dates=show_dates)
 
     for result in results:
         print_heatmap(result, top_n=10)
@@ -256,6 +273,7 @@ def main() -> None:
         exit_minute = 0
         no_log = False
         no_alpaca = False
+        brief = False
 
     args = Args()
 
@@ -287,6 +305,9 @@ def main() -> None:
             i += 1
         elif tok == '--no-alpaca':
             args.no_alpaca = True
+            i += 1
+        elif tok == '--brief':
+            args.brief = True
             i += 1
         else:
             i += 1

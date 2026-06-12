@@ -23,6 +23,7 @@ def run(suite: Suite) -> None:
     _test_probability(suite)
     _test_dates_and_symbols(suite)
     _test_backtester_math(suite)
+    _test_data_provenance(suite)
     _test_alpaca_parsing(suite)
     _test_logger_reporter(suite)
 
@@ -210,6 +211,70 @@ def _test_backtester_math(suite: Suite) -> None:
             res4 = Backtester(MockFetcher(up), cfg).run(["TEST"])[0]
             s.check("Single date (2 samples) filtered by 3-sample minimum",
                     len(res4.all_pairs) == 0)
+    finally:
+        bt.get_past_mwf_dates = orig
+
+
+def _test_data_provenance(suite: Suite) -> None:
+    """Verify the backtester correctly labels REAL vs SIMULATED data sources."""
+    from config import Config
+    from analysis.backtester import Backtester
+    import analysis.backtester as bt
+
+    class RealOnly:
+        def fetch_historical_stock_bars(self, ticker, start, end, minutes=5):
+            idx = [start + timedelta(minutes=i) for i in range(60)]
+            c = [100.0 + 0.1 * i for i in range(60)]
+            return pd.DataFrame({"open": c, "high": c, "low": c, "close": c,
+                                 "volume": [1000] * 60}, index=pd.to_datetime(idx, utc=True))
+        def fetch_historical_option_bars(self, sym, start, end):
+            idx = [start + timedelta(minutes=i) for i in range(60)]
+            c = [1.0 + 0.02 * i for i in range(60)]
+            return pd.DataFrame({"open": c, "high": c, "low": c, "close": c,
+                                 "volume": [10] * 60}, index=pd.to_datetime(idx, utc=True))
+
+    class SimOnly(RealOnly):
+        def fetch_historical_option_bars(self, sym, start, end):
+            return None  # forces Black-Scholes simulation
+        def get_daily_closes(self, ticker, days=40):
+            return [100.0 + 0.5 * i for i in range(40)]
+
+    class NoStock:
+        def fetch_historical_stock_bars(self, ticker, start, end, minutes=5):
+            return None
+        def fetch_historical_option_bars(self, sym, start, end):
+            return None
+
+    cfg = Config()
+    cfg.tickers = ["T"]
+    orig = bt.get_past_mwf_dates
+    bt.get_past_mwf_dates = lambda days: [date(2026, 6, 1), date(2026, 6, 3),
+                                          date(2026, 6, 5)]
+    try:
+        with suite.section("Data Provenance Tracking (REAL vs SIMULATED)") as s:
+            r = Backtester(RealOnly(), cfg).run(["T"])[0]
+            s.check("Real option bars -> primary_source = 'REAL'",
+                    r.primary_source == "REAL", r.primary_source)
+            s.check("Real path: 6 real pulls, 0 simulated",
+                    r.n_real_pulls == 6 and r.n_sim_pulls == 0,
+                    f"{r.n_real_pulls}/{r.n_sim_pulls}")
+
+            sim = Backtester(SimOnly(), cfg).run(["T"])[0]
+            s.check("No option bars -> primary_source = 'SIMULATED'",
+                    sim.primary_source == "SIMULATED", sim.primary_source)
+            s.check("Sim path records the volatility used",
+                    sim.sim_sigma > 0, f"σ={sim.sim_sigma:.3f}")
+            s.check("Sim path: 0 real pulls, 6 simulated",
+                    sim.n_real_pulls == 0 and sim.n_sim_pulls == 6)
+
+            nd = Backtester(NoStock(), cfg).run(["T"])[0]
+            s.check("No stock bars -> primary_source = 'NONE'",
+                    nd.primary_source == "NONE", nd.primary_source)
+            s.check("No-data path: all 3 dates skipped",
+                    nd.n_skipped_dates == 3, f"{nd.n_skipped_dates}")
+
+            s.check("pull_details captures every (date, strike) pull",
+                    len(r.pull_details) == 6, f"{len(r.pull_details)}")
     finally:
         bt.get_past_mwf_dates = orig
 

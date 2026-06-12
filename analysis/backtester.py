@@ -5,7 +5,10 @@ from datetime import date, datetime, timedelta
 import pandas as pd
 
 from config import Config
-from models import BacktestPairResult, BacktestResult
+from models import (
+    BacktestPairResult, BacktestResult, DataPullDetail,
+    SOURCE_REAL, SOURCE_SIM, SOURCE_NO_STOCK,
+)
 from utils.date_utils import (
     ET, UTC, get_past_mwf_dates, detect_strike_interval, get_atm_strikes,
     format_contract_symbol, window_start_utc, window_end_utc, minute_to_str
@@ -33,11 +36,18 @@ class Backtester:
         # payoffs[(entry_min, exit_min)] = [payoff1, payoff2, ...]
         payoffs: dict[tuple, list] = defaultdict(list)
 
-        # Preload daily closes for realized vol (yfinance fallback)
+        # Preload daily closes for realized vol (used by BS simulation)
         daily_closes = []
         if hasattr(self.fetcher, 'get_daily_closes'):
             daily_closes = self.fetcher.get_daily_closes(ticker, days=40)
+        sim_sigma = realized_vol(daily_closes) if len(daily_closes) >= 10 else 0.35
+        sim_sigma = max(0.10, min(2.0, sim_sigma))
 
+        # Provenance tracking
+        pull_details: list[DataPullDetail] = []
+        n_real = 0
+        n_sim = 0
+        n_skipped = 0
         dates_used = 0
 
         for mwf_date in past_dates:
@@ -54,6 +64,12 @@ class Backtester:
                     ticker, win_start, win_end, minutes=5
                 )
             if stock_bars is None or stock_bars.empty:
+                n_skipped += 1
+                pull_details.append(DataPullDetail(
+                    date=str(mwf_date), strike=0.0, contract_symbol='',
+                    source=SOURCE_NO_STOCK, n_bars=0,
+                    note='no stock bars in 3-4 PM window',
+                ))
                 continue
 
             # Spot price at start of window for ATM strike determination
@@ -72,11 +88,24 @@ class Backtester:
 
                 if opt_bars is not None and len(opt_bars) >= 5:
                     minute_prices = self._bars_to_minute_prices(opt_bars)
+                    source = SOURCE_REAL
+                    n_real += 1
+                    detail_sigma = 0.0
                 else:
                     # Simulate using Black-Scholes + stock prices
                     minute_prices = self._simulate_option_prices(
                         stock_bars, atm_strike, mwf_date, daily_closes
                     )
+                    source = SOURCE_SIM
+                    n_sim += 1
+                    detail_sigma = sim_sigma
+
+                pull_details.append(DataPullDetail(
+                    date=str(mwf_date), strike=atm_strike,
+                    contract_symbol=contract_sym, source=source,
+                    n_bars=len(minute_prices), spot_at_3pm=spot_3pm,
+                    sigma_used=detail_sigma,
+                ))
 
                 if not minute_prices:
                     continue
@@ -86,7 +115,25 @@ class Backtester:
             dates_used += 1
             time.sleep(0.3)  # rate limit courtesy pause
 
-        return self._build_result(ticker, payoffs, dates_used)
+        result = self._build_result(ticker, payoffs, dates_used)
+
+        # Attach provenance
+        result.n_real_pulls = n_real
+        result.n_sim_pulls = n_sim
+        result.n_skipped_dates = n_skipped
+        result.n_total_samples = sum(len(v) for v in payoffs.values())
+        result.sim_sigma = sim_sigma
+        result.pull_details = pull_details
+        if n_real > 0 and n_sim == 0:
+            result.primary_source = 'REAL'
+        elif n_sim > 0 and n_real == 0:
+            result.primary_source = 'SIMULATED'
+        elif n_real > 0 and n_sim > 0:
+            result.primary_source = 'MIXED'
+        else:
+            result.primary_source = 'NONE'
+
+        return result
 
     def _bars_to_minute_prices(self, bars: pd.DataFrame) -> dict[int, float]:
         """Convert bar DataFrame to {minute_of_day: close_price} using ET time."""

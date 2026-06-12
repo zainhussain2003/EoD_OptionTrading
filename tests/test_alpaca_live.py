@@ -228,6 +228,10 @@ def _test_mini_backtest(suite: Suite, fetcher) -> None:
 
         s.info("Dates analyzed", result.n_dates)
         s.info("Entry/exit pairs evaluated", len(result.all_pairs))
+        s.info("Data source verdict", result.primary_source)
+        s.info("  real option-bar pulls", result.n_real_pulls)
+        s.info("  simulated (BS) pulls", result.n_sim_pulls)
+        s.info("  skipped dates (no stock)", result.n_skipped_dates)
         if result.all_pairs:
             from utils.date_utils import minute_to_str
             s.info("Optimal entry", minute_to_str(result.best_entry_minute))
@@ -237,6 +241,14 @@ def _test_mini_backtest(suite: Suite, fetcher) -> None:
 
         s.check("Backtest completed end-to-end", True)
         s.check("At least one date was analyzed", result.n_dates > 0)
+        if result.primary_source == "REAL":
+            s.check("Backtest uses REAL Alpaca option prices (most accurate)", True)
+        elif result.primary_source == "MIXED":
+            s.check("Backtest uses MIXED real + simulated prices", True,
+                    f"{result.n_real_pulls} real / {result.n_sim_pulls} sim")
+        elif result.primary_source == "SIMULATED":
+            s.skip("Backtest used Black-Scholes simulation only",
+                   "no real option bars — enable Alpaca options history for accuracy")
         if result.all_pairs:
             s.check("Win rate is a valid probability [0,1]",
                     0.0 <= result.win_rate <= 1.0)

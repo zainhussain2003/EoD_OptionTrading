@@ -33,6 +33,16 @@ python main.py --log                  # cumulative P&L from your trade log
 `--backtest` prints, per ticker: the optimal entry/exit time, win rate, average
 payoff, and a full entry×exit win-rate heatmap.
 
+### Data provenance (real vs simulated)
+
+Every `--backtest` run includes a **DATA PROVENANCE** report so you know how
+much to trust each result. For each ticker it shows a verdict — `REAL`
+(actual Alpaca option prices), `SIMULATED` (Black-Scholes estimates when real
+option bars weren't available), `MIXED`, or `NONE` — plus counts, the
+volatility used for any simulation, and a per-date table listing the exact
+contract, number of bars, spot price, and source for every data pull. Add
+`--brief` to show only the summary without the per-date table.
+
 ## Testing
 
 A full test suite validates the math, dates, parsing, backtester payoff logic,

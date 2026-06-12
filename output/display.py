@@ -2,7 +2,10 @@ import os
 import sys
 from datetime import datetime
 
-from models import BacktestResult, BacktestPairResult, OptionContract
+from models import (
+    BacktestResult, BacktestPairResult, OptionContract,
+    SOURCE_REAL, SOURCE_SIM, SOURCE_NO_STOCK,
+)
 from utils.date_utils import minute_to_str, now_et, ET
 
 
@@ -37,12 +40,23 @@ def print_header(mode: str = '') -> None:
     print(_bold('=' * w))
 
 
+def _source_tag(primary: str) -> str:
+    """Short colored tag for a result's primary data source."""
+    if primary == 'REAL':
+        return _green('REAL')
+    if primary == 'SIMULATED':
+        return _yellow('SIM')
+    if primary == 'MIXED':
+        return _yellow('MIXED')
+    return _red('NONE')
+
+
 def print_backtest_results(results: list[BacktestResult]) -> None:
     n_dates = results[0].n_dates if results else 0
     print(f"\n{_bold('=== BACKTEST RESULTS')} ({n_dates} past MWF dates analyzed)\n")
 
-    header = f"  {'Ticker':<8} {'Best Entry':>11} {'Best Exit':>10} {'Win Rate':>9} {'Avg Payoff':>11} {'Score':>7} {'N':>5}"
-    sep    = f"  {'-'*8} {'-'*11} {'-'*10} {'-'*9} {'-'*11} {'-'*7} {'-'*5}"
+    header = f"  {'Ticker':<8} {'Best Entry':>11} {'Best Exit':>10} {'Win Rate':>9} {'Avg Payoff':>11} {'Score':>7} {'Dates':>6} {'Source':>7}"
+    sep    = f"  {'-'*8} {'-'*11} {'-'*10} {'-'*9} {'-'*11} {'-'*7} {'-'*6} {'-'*7}"
     print(header)
     print(sep)
 
@@ -53,17 +67,82 @@ def print_backtest_results(results: list[BacktestResult]) -> None:
         payoff    = f"${r.avg_payoff:+.3f}"
         score     = f"{r.score:.4f}"
         n         = str(r.n_dates)
+        src       = _source_tag(r.primary_source)
+        # pad the source tag accounting for invisible ANSI codes
+        src_pad = src + ' ' * max(0, 7 - len(r.primary_source[:5] if r.primary_source != 'SIMULATED' else 'SIM'))
 
+        base = f"  {r.ticker:<8} {entry_str:>11} {exit_str:>10} {win_pct:>9} {payoff:>11} {score:>7} {n:>6} "
         if r.win_rate >= 0.60:
-            row = _green(f"  {r.ticker:<8} {entry_str:>11} {exit_str:>10} {win_pct:>9} {payoff:>11} {score:>7} {n:>5}")
+            print(_green(base) + src)
         elif r.win_rate >= 0.50:
-            row = _yellow(f"  {r.ticker:<8} {entry_str:>11} {exit_str:>10} {win_pct:>9} {payoff:>11} {score:>7} {n:>5}")
+            print(_yellow(base) + src)
         else:
-            row = f"  {r.ticker:<8} {entry_str:>11} {exit_str:>10} {win_pct:>9} {payoff:>11} {score:>7} {n:>5}"
-        print(row)
+            print(base + src)
 
     print()
     print(_bold("RECOMMENDATION: Trade every MWF using the entry/exit times above."))
+    print(f"  {_green('REAL')} = backed by actual Alpaca option prices  |  "
+          f"{_yellow('SIM')} = Black-Scholes estimate  |  {_red('NONE')} = no data")
+    print()
+
+
+def print_data_source_report(result: BacktestResult, show_dates: bool = True) -> None:
+    """Detailed provenance for one ticker: exactly where every number came from.
+
+    Makes it obvious whether the backtest is trustworthy (real option prices)
+    or approximate (Black-Scholes simulation when real bars weren't available).
+    """
+    w = 64
+    print(_bold('=' * w))
+    print(_bold(f"  DATA SOURCE REPORT — {result.ticker}"))
+    print(_bold('=' * w))
+
+    total_pulls = result.n_real_pulls + result.n_sim_pulls
+    real_pct = (result.n_real_pulls / total_pulls * 100) if total_pulls else 0.0
+    sim_pct  = (result.n_sim_pulls / total_pulls * 100) if total_pulls else 0.0
+
+    # Headline verdict
+    if result.primary_source == 'REAL':
+        verdict = _green("✓ ACCURATE — every data point is a real Alpaca option price")
+    elif result.primary_source == 'SIMULATED':
+        verdict = _yellow("≈ APPROXIMATE — all prices are Black-Scholes estimates "
+                          "(no real option bars were available)")
+    elif result.primary_source == 'MIXED':
+        verdict = _yellow(f"◑ MIXED — {real_pct:.0f}% real prices, {sim_pct:.0f}% "
+                          "Black-Scholes estimates")
+    else:
+        verdict = _red("✗ NO DATA — no usable stock or option bars were returned")
+    print(f"  Verdict: {verdict}")
+    print()
+
+    # Counts
+    print(f"  {'Real Alpaca option-bar pulls':<38}: {_green(str(result.n_real_pulls)):>4}  ({real_pct:.0f}%)")
+    print(f"  {'Black-Scholes simulated pulls':<38}: {_yellow(str(result.n_sim_pulls)):>4}  ({sim_pct:.0f}%)")
+    print(f"  {'MWF dates skipped (no stock bars)':<38}: {result.n_skipped_dates:>4}")
+    print(f"  {'Dates successfully used':<38}: {result.n_dates:>4}")
+    print(f"  {'Total payoff samples in stats':<38}: {result.n_total_samples:>4}")
+    if result.n_sim_pulls > 0:
+        print(f"  {'Volatility (σ) used for simulation':<38}: {result.sim_sigma:>6.1%}")
+    print()
+
+    # Per-date breakdown
+    if show_dates and result.pull_details:
+        print(f"  Per-date detail (each MWF tries 2 ATM strikes):")
+        print(f"  {'Date':<12} {'Strike':>8} {'Contract':<22} {'Bars':>5} {'Spot':>8}  Source")
+        print(f"  {'-'*12} {'-'*8} {'-'*22} {'-'*5} {'-'*8}  {'-'*24}")
+        for d in result.pull_details:
+            if d.source == SOURCE_REAL:
+                src = _green('REAL  (Alpaca option bars)')
+            elif d.source == SOURCE_SIM:
+                src = _yellow('SIM   (Black-Scholes)')
+            else:
+                src = _red('SKIP  (no stock bars)')
+            strike_s = f"{d.strike:.1f}" if d.strike else "—"
+            spot_s = f"${d.spot_at_3pm:.2f}" if d.spot_at_3pm else "—"
+            contract_s = d.contract_symbol or "—"
+            print(f"  {d.date:<12} {strike_s:>8} {contract_s:<22} {d.n_bars:>5} {spot_s:>8}  {src}")
+        print()
+    print(_bold('=' * w))
     print()
 
 
