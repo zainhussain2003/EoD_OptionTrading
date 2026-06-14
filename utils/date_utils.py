@@ -9,6 +9,90 @@ UTC = timezone.utc
 MWF = {0, 2, 4}  # Monday=0, Wednesday=2, Friday=4
 
 
+# ── US (NYSE) market-holiday calendar — deterministic, no external deps ─────
+def _easter(year: int) -> date:
+    """Gregorian Easter Sunday (anonymous algorithm)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month = (h + l - 7 * m + 114) // 31
+    day = ((h + l - 7 * m + 114) % 31) + 1
+    return date(year, month, day)
+
+
+def _nth_weekday(year: int, month: int, weekday: int, n: int) -> date:
+    """The nth (1-based) given weekday in a month, e.g. 4th Thursday of November."""
+    d = date(year, month, 1)
+    offset = (weekday - d.weekday()) % 7
+    return d + timedelta(days=offset + 7 * (n - 1))
+
+
+def _last_weekday(year: int, month: int, weekday: int) -> date:
+    """The last given weekday in a month, e.g. last Monday of May."""
+    if month == 12:
+        d = date(year, 12, 31)
+    else:
+        d = date(year, month + 1, 1) - timedelta(days=1)
+    return d - timedelta(days=(d.weekday() - weekday) % 7)
+
+
+def _observed(d: date, shift_saturday: bool = True) -> date:
+    """NYSE weekend observation: Sat→preceding Fri, Sun→following Mon."""
+    if d.weekday() == 5 and shift_saturday:
+        return d - timedelta(days=1)
+    if d.weekday() == 6:
+        return d + timedelta(days=1)
+    return d
+
+
+_HOLIDAY_CACHE: dict[int, set] = {}
+
+
+def nyse_holidays(year: int) -> set:
+    """Set of NYSE full-closure dates for a year (the ones that matter for
+    weekly Thu/Fri expiries; intraday half-days are treated as open)."""
+    if year in _HOLIDAY_CACHE:
+        return _HOLIDAY_CACHE[year]
+    h = set()
+    # New Year's Day — NYSE does NOT pull a Saturday Jan 1 back to Dec 31.
+    h.add(_observed(date(year, 1, 1), shift_saturday=False))
+    h.add(_nth_weekday(year, 1, 0, 3))      # MLK Day — 3rd Monday Jan
+    h.add(_nth_weekday(year, 2, 0, 3))      # Presidents' Day — 3rd Monday Feb
+    h.add(_easter(year) - timedelta(days=2))  # Good Friday
+    h.add(_last_weekday(year, 5, 0))        # Memorial Day — last Monday May
+    if year >= 2021:
+        h.add(_observed(date(year, 6, 19)))  # Juneteenth
+    h.add(_observed(date(year, 7, 4)))       # Independence Day
+    h.add(_nth_weekday(year, 9, 0, 1))       # Labor Day — 1st Monday Sep
+    h.add(_nth_weekday(year, 11, 3, 4))      # Thanksgiving — 4th Thursday Nov
+    h.add(_observed(date(year, 12, 25)))     # Christmas
+    _HOLIDAY_CACHE[year] = h
+    return h
+
+
+def is_market_holiday(d: date) -> bool:
+    return d in nyse_holidays(d.year)
+
+
+def is_trading_day(d: date) -> bool:
+    """A weekday that isn't a full NYSE closure."""
+    return d.weekday() < 5 and not is_market_holiday(d)
+
+
+def previous_trading_day(d: date) -> date:
+    """The most recent trading day strictly before d."""
+    p = d - timedelta(days=1)
+    while not is_trading_day(p):
+        p -= timedelta(days=1)
+    return p
+
+
 def get_past_mwf_dates(days_back: int = 60) -> list[date]:
     """All MWF trading dates in the past `days_back` calendar days, oldest first."""
     today = date.today()
@@ -20,21 +104,31 @@ def get_past_mwf_dates(days_back: int = 60) -> list[date]:
     return list(reversed(result))
 
 
-def get_past_thursday_friday_pairs(days_back: int = 365) -> list[tuple[date, date]]:
-    """All (Thursday, Friday) calendar pairs in the past `days_back` days.
+def get_past_weekly_pairs(days_back: int = 365) -> list[tuple[date, date]]:
+    """(entry_day, expiry_day) per week in the past `days_back` days, oldest first.
 
-    Thursday is the entry day (weekday 3); the Friday immediately after it
-    (Thursday + 1 day, weekday 4) is the expiry/tracking day. Oldest first.
-    Holiday gaps are tolerated downstream — pairs with no market data are
-    simply skipped when fetched.
+    The weekly expiry is Friday. When that Friday is a market holiday (e.g. Good
+    Friday) the option expires the prior trading day instead — normally Thursday
+    — so no week is skipped and we stay on REAL data:
+
+        normal week        →  buy Thursday,  expiry Friday
+        Friday closed       →  buy Wednesday, expiry Thursday
+
+    Entry is always the trading day immediately before the expiry day, so other
+    gaps (e.g. a closed Thursday with Friday open) resolve sensibly too.
     """
     today = date.today()
     result = []
     for i in range(1, days_back + 1):
         d = today - timedelta(days=i)
-        if d.weekday() == 3:                 # Thursday
-            friday = d + timedelta(days=1)   # next-day Friday expiry
-            result.append((d, friday))
+        if d.weekday() != 4:                  # iterate one anchor per Friday
+            continue
+        if is_trading_day(d):                 # normal week: Friday expiry
+            expiry = d
+        else:                                 # Friday closed: roll to Thursday
+            expiry = previous_trading_day(d)
+        entry = previous_trading_day(expiry)  # trading day before expiry
+        result.append((entry, expiry))
     return list(reversed(result))
 
 

@@ -4,11 +4,17 @@ Shared engine for the THURSDAY → FRIDAY call-option probability backtest.
 
 Strategy modelled
 -----------------
-  • On THURSDAY, between 3:55 and 3:59 PM ET (minute by minute), you buy the
-    ATM call that expires the NEXT day (Friday weekly/0DTE-on-Friday).
-  • You then watch that exact contract all day FRIDAY (9:30 AM – 4:00 PM ET).
-  • The question: what fraction of the time did the option's Friday session
-    HIGH reach a target return multiple of your Thursday entry price?
+  • The weekly expiry is FRIDAY. You buy the ATM call the trading day BEFORE
+    expiry — normally THURSDAY — between 3:55 and 3:59 PM ET (minute by minute).
+  • When that Friday is a market holiday (e.g. Good Friday), the option expires
+    THURSDAY instead, so the entry rolls back to WEDNESDAY. No week is skipped
+    and the data stays REAL (no simulated phantom-Friday):
+        normal week    →  buy Thursday,  expiry Friday
+        Friday closed  →  buy Wednesday, expiry Thursday
+  • You then watch that exact contract all day on the EXPIRY day
+    (9:30 AM – 4:00 PM ET).
+  • The question: what fraction of the time did the option's expiry-day session
+    HIGH reach a target return multiple of your entry price?
 
 Targets are RETURN multiples (profit ÷ premium paid):
       target_price = entry_price × (1 + multiple)
@@ -17,13 +23,13 @@ Targets are RETURN multiples (profit ÷ premium paid):
       1.5x return → ×2.50 → $1.25
       2.0x return → ×3.00 → $1.50
       2.5x return → ×3.50 → $1.75
-"reaching" = the Friday intraday HIGH touches the target at ANY point.
+"reaching" = the expiry-day intraday HIGH touches the target at ANY point.
 
 Data
 ----
 Real Alpaca option bars when available; Black-Scholes reconstruction (from the
 underlying's path + realized vol) as a fallback. Both legs of a sample (the
-Thursday entry and the Friday path) always come from the SAME source, so the
+entry-day price and the expiry-day path) always come from the SAME source, so the
 return ratio is never real-vs-simulated apples-to-oranges.
 
 The entry scripts (e.g. backtest_thu_fri_calls.py) just set the knobs at the
@@ -51,24 +57,24 @@ import pandas as pd
 from config import Config
 from models import SOURCE_REAL, SOURCE_SIM
 from utils.date_utils import (
-    ET, get_past_thursday_friday_pairs, entry_window_start_utc,
+    ET, get_past_weekly_pairs, entry_window_start_utc,
     window_end_utc, session_start_utc, detect_strike_interval, get_atm_strikes,
-    format_contract_symbol, minute_to_str,
+    format_contract_symbol, minute_to_str, is_trading_day,
 )
 from utils.math_utils import black_scholes_call, realized_vol
 
 # 1 option contract controls 100 shares.
 CONTRACT_MULTIPLIER = 100
 
-# Thursday entry minutes (minute-of-day): 3:55–3:59 PM ET, one row each.
+# Entry-day minutes (minute-of-day): 3:55–3:59 PM ET, one row each.
 ENTRY_MINUTES = [955, 956, 957, 958, 959]
 ENTRY_TOL = 2              # accept a bar within this many minutes of the target
 MIN_SAMPLES = 3           # need >= this many dated samples to report a cell
 RESULTS_DIR = "thu_fri_results"
 
-# Friday session bounds (minute-of-day): 9:30 AM → 4:00 PM ET.
-FRI_OPEN_MIN = 9 * 60 + 30
-FRI_CLOSE_MIN = 16 * 60
+# Expiry-day session bounds (minute-of-day): 9:30 AM → 4:00 PM ET.
+SESSION_OPEN_MIN = 9 * 60 + 30
+SESSION_CLOSE_MIN = 16 * 60
 
 
 # ── tiny ANSI helpers (no-op when output is piped to a file) ──────────────
@@ -92,28 +98,35 @@ def get_fetcher():
     return YFinanceFetcher(), "yfinance (set ALPACA_API_KEY for real option data)"
 
 
-# ── time-to-expiry in TRADING hours (overnight doesn't decay) ─────────────
-def trading_hours_until_friday_close(ts_et: datetime, friday: date) -> float:
-    """Regular-trading-hours (9:30–16:00 ET) remaining from ts_et to Fri close."""
-    close = datetime(friday.year, friday.month, friday.day, 16, 0, tzinfo=ET)
+# ── time-to-expiry in TRADING hours (overnight/holidays don't decay) ──────
+def trading_hours_until_expiry_close(ts_et: datetime, expiry: date) -> float:
+    """Regular-trading-hours (9:30–16:00 ET) remaining from ts_et to expiry close.
+
+    Counts the remainder of the bar's own session plus a full 6.5-hour session
+    for each trading day up to and including the expiry day — so the overnight
+    gap and any intervening holiday (e.g. a closed Thursday) don't decay time.
+    """
+    from datetime import timedelta
+    close = datetime(expiry.year, expiry.month, expiry.day, 16, 0, tzinfo=ET)
     if ts_et >= close:
         return 0.0
-    hours = 0.0
-    # Remaining RTH on the bar's own day (Thursday or Friday)
     day = ts_et.date()
     day_open = datetime(day.year, day.month, day.day, 9, 30, tzinfo=ET)
     day_close = datetime(day.year, day.month, day.day, 16, 0, tzinfo=ET)
     bar = min(max(ts_et, day_open), day_close)
-    hours += max((day_close - bar).total_seconds(), 0.0) / 3600.0
-    # If the bar is on Thursday, add Friday's full 6.5-hour session
-    if day < friday:
-        hours += 6.5
+    hours = max((day_close - bar).total_seconds(), 0.0) / 3600.0
+    # Full sessions for each trading day after the bar's day, through expiry.
+    d = day + timedelta(days=1)
+    while d <= expiry:
+        if is_trading_day(d):
+            hours += 6.5
+        d += timedelta(days=1)
     return hours
 
 
-def _T_years(ts_et: datetime, friday: date) -> float:
+def _T_years(ts_et: datetime, expiry: date) -> float:
     """Convert remaining trading hours into fractional trading years (floored)."""
-    h = trading_hours_until_friday_close(ts_et, friday)
+    h = trading_hours_until_expiry_close(ts_et, expiry)
     T = h / (252.0 * 6.5)
     return max(T, 1.0 / (252.0 * 6.5 * 60.0))   # floor ~1 trading minute
 
@@ -145,59 +158,60 @@ def _price_at(minute_prices: dict[int, float], target_m: int, tol: int):
     return minute_prices[min(cands, key=lambda x: abs(x - target_m))]
 
 
-# ── one (Thursday→Friday, ticker) sample ──────────────────────────────────
-def _build_sample(fetcher, ticker, thu, fri, strikes, r, sigma):
+# ── one (entry-day → expiry-day, ticker) sample ───────────────────────────
+def _build_sample(fetcher, ticker, entry_d, expiry_d, strikes, r, sigma):
     """Return a sample dict or None. Tries REAL bars first, then BS simulation.
 
-    Sample = {thu, fri, ticker, strike, contract, source, fri_high,
-              entries: {minute: entry_price}}
+    Sample = {entry_date, expiry_date, ticker, strike, contract, source,
+              exp_high, entries: {minute: entry_price}}
     Both legs share one source so the return ratio stays internally consistent.
     """
-    thu_start = entry_window_start_utc(thu)      # Thu 3:50 PM ET
-    thu_end = window_end_utc(thu)                # Thu 4:00 PM ET
-    fri_start = session_start_utc(fri)           # Fri 9:30 AM ET
-    fri_end = window_end_utc(fri)                # Fri 4:00 PM ET
+    e_start = entry_window_start_utc(entry_d)    # entry day 3:50 PM ET
+    e_end = window_end_utc(entry_d)              # entry day 4:00 PM ET
+    x_start = session_start_utc(expiry_d)        # expiry day 9:30 AM ET
+    x_end = window_end_utc(expiry_d)             # expiry day 4:00 PM ET
 
     # ---- attempt 1: REAL option bars (try each candidate strike) ----
     for strike in strikes:
-        contract = format_contract_symbol(ticker, fri, strike)
-        thu_opt = fetcher.fetch_historical_option_bars(contract, thu_start, thu_end)
-        fri_opt = fetcher.fetch_historical_option_bars(contract, fri_start, fri_end)
+        contract = format_contract_symbol(ticker, expiry_d, strike)
+        e_opt = fetcher.fetch_historical_option_bars(contract, e_start, e_end)
+        x_opt = fetcher.fetch_historical_option_bars(contract, x_start, x_end)
 
-        thu_close = _bars_minute_field(thu_opt, thu, "close", 950, 959)
-        fri_high_map = _bars_minute_field(fri_opt, fri, "high", FRI_OPEN_MIN, FRI_CLOSE_MIN)
+        e_close = _bars_minute_field(e_opt, entry_d, "close", 950, 959)
+        x_high_map = _bars_minute_field(x_opt, expiry_d, "high",
+                                        SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
 
         entries = {}
         for m in ENTRY_MINUTES:
-            ep = _price_at(thu_close, m, ENTRY_TOL)
+            ep = _price_at(e_close, m, ENTRY_TOL)
             if ep is not None and ep > 0:
                 entries[m] = ep
-        if entries and fri_high_map:
+        if entries and x_high_map:
             return {
-                "thu": thu, "fri": fri, "ticker": ticker, "strike": strike,
-                "contract": contract, "source": SOURCE_REAL,
-                "fri_high": max(fri_high_map.values()),
+                "entry_date": entry_d, "expiry_date": expiry_d, "ticker": ticker,
+                "strike": strike, "contract": contract, "source": SOURCE_REAL,
+                "exp_high": max(x_high_map.values()),
                 "entries": entries,
             }
 
     # ---- attempt 2: Black-Scholes simulation (nearest strike) ----
     strike = strikes[0]
-    contract = format_contract_symbol(ticker, fri, strike)
-    thu_stock = fetcher.fetch_historical_stock_bars(ticker, thu_start, thu_end, minutes=1)
-    if thu_stock is None or thu_stock.empty:
-        thu_stock = fetcher.fetch_historical_stock_bars(ticker, thu_start, thu_end, minutes=5)
-    fri_stock = fetcher.fetch_historical_stock_bars(ticker, fri_start, fri_end, minutes=1)
-    if fri_stock is None or fri_stock.empty:
-        fri_stock = fetcher.fetch_historical_stock_bars(ticker, fri_start, fri_end, minutes=5)
-    if thu_stock is None or thu_stock.empty or fri_stock is None or fri_stock.empty:
+    contract = format_contract_symbol(ticker, expiry_d, strike)
+    e_stock = fetcher.fetch_historical_stock_bars(ticker, e_start, e_end, minutes=1)
+    if e_stock is None or e_stock.empty:
+        e_stock = fetcher.fetch_historical_stock_bars(ticker, e_start, e_end, minutes=5)
+    x_stock = fetcher.fetch_historical_stock_bars(ticker, x_start, x_end, minutes=1)
+    if x_stock is None or x_stock.empty:
+        x_stock = fetcher.fetch_historical_stock_bars(ticker, x_start, x_end, minutes=5)
+    if e_stock is None or e_stock.empty or x_stock is None or x_stock.empty:
         return None
 
-    # Thursday entry prices: BS on the underlying close at each entry minute.
-    thu_sclose = _bars_minute_field(thu_stock, thu, "close", 950, 959)
+    # Entry-day prices: BS on the underlying close at each entry minute.
+    e_sclose = _bars_minute_field(e_stock, entry_d, "close", 950, 959)
     entry_opt = {}
-    for m, spot in thu_sclose.items():
-        et = datetime(thu.year, thu.month, thu.day, m // 60, m % 60, tzinfo=ET)
-        T = _T_years(et, fri)
+    for m, spot in e_sclose.items():
+        et = datetime(entry_d.year, entry_d.month, entry_d.day, m // 60, m % 60, tzinfo=ET)
+        T = _T_years(et, expiry_d)
         px, *_ = black_scholes_call(spot, strike, T, r, sigma)
         if px > 0:
             entry_opt[m] = px
@@ -209,27 +223,28 @@ def _build_sample(fetcher, ticker, thu, fri, strikes, r, sigma):
     if not entries:
         return None
 
-    # Friday high: BS on each bar's HIGH spot (captures the intraday touch).
-    fri_shigh = _bars_minute_field(fri_stock, fri, "high", FRI_OPEN_MIN, FRI_CLOSE_MIN)
-    fri_opt_prices = []
-    for m, spot in fri_shigh.items():
-        et = datetime(fri.year, fri.month, fri.day, m // 60, m % 60, tzinfo=ET)
-        T = _T_years(et, fri)
+    # Expiry-day high: BS on each bar's HIGH spot (captures the intraday touch).
+    x_shigh = _bars_minute_field(x_stock, expiry_d, "high",
+                                 SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
+    x_opt_prices = []
+    for m, spot in x_shigh.items():
+        et = datetime(expiry_d.year, expiry_d.month, expiry_d.day, m // 60, m % 60, tzinfo=ET)
+        T = _T_years(et, expiry_d)
         px, *_ = black_scholes_call(spot, strike, T, r, sigma)
-        fri_opt_prices.append(px)
-    if not fri_opt_prices:
+        x_opt_prices.append(px)
+    if not x_opt_prices:
         return None
 
     return {
-        "thu": thu, "fri": fri, "ticker": ticker, "strike": strike,
-        "contract": contract, "source": SOURCE_SIM,
-        "fri_high": max(fri_opt_prices),
+        "entry_date": entry_d, "expiry_date": expiry_d, "ticker": ticker,
+        "strike": strike, "contract": contract, "source": SOURCE_SIM,
+        "exp_high": max(x_opt_prices),
         "entries": entries,
     }
 
 
 def collect_samples(fetcher, config, pairs):
-    """Gather one sample per (ticker, Thursday→Friday) pair. {ticker: [samples]}."""
+    """Gather one sample per (ticker, entry→expiry) pair. {ticker: [samples]}."""
     by_ticker = defaultdict(list)
     for ticker in config.tickers:
         print(f"  Collecting {ticker}...", flush=True)
@@ -240,21 +255,21 @@ def collect_samples(fetcher, config, pairs):
         sigma = realized_vol(closes) if len(closes) >= 10 else 0.35
         sigma = max(0.10, min(2.0, sigma))
 
-        for thu, fri in pairs:
-            # Pick ATM strike from Thursday's late-afternoon spot.
-            thu_start = entry_window_start_utc(thu)
-            thu_end = window_end_utc(thu)
-            stock = fetcher.fetch_historical_stock_bars(ticker, thu_start, thu_end, minutes=1)
+        for entry_d, expiry_d in pairs:
+            # Pick ATM strike from the entry day's late-afternoon spot.
+            e_start = entry_window_start_utc(entry_d)
+            e_end = window_end_utc(entry_d)
+            stock = fetcher.fetch_historical_stock_bars(ticker, e_start, e_end, minutes=1)
             if stock is None or stock.empty:
-                stock = fetcher.fetch_historical_stock_bars(ticker, thu_start, thu_end, minutes=5)
+                stock = fetcher.fetch_historical_stock_bars(ticker, e_start, e_end, minutes=5)
             if stock is None or stock.empty:
                 continue
-            spot = float(stock["close"].iloc[-1])     # ~3:59 PM Thursday spot
+            spot = float(stock["close"].iloc[-1])     # ~3:59 PM entry-day spot
             interval = detect_strike_interval(spot)
             lo, hi = get_atm_strikes(spot, interval)
             strikes = sorted({lo, hi}, key=lambda k: abs(k - spot))  # nearest first
 
-            sample = _build_sample(fetcher, ticker, thu, fri, strikes,
+            sample = _build_sample(fetcher, ticker, entry_d, expiry_d, strikes,
                                    config.risk_free_rate, sigma)
             if sample is not None:
                 sample["spot"] = spot
@@ -269,7 +284,7 @@ def minute_stats(samples, minute, multiples):
 
     Returns None if too few samples, else {n, avg_entry, probs:{m: p}, ...}.
     """
-    rows = [(s["entries"][minute], s["fri_high"])
+    rows = [(s["entries"][minute], s["exp_high"])
             for s in samples if minute in s["entries"]]
     if len(rows) < MIN_SAMPLES:
         return None
@@ -299,7 +314,7 @@ def _print_ticker_block(ticker, samples, multiples):
     print(bold(f"  {ticker}"))
     print(bold("=" * 84))
     if not samples:
-        print(red("  No usable Thursday→Friday samples for this ticker.\n"))
+        print(red("  No usable entry→expiry samples for this ticker.\n"))
         return
     n_real = sum(1 for s in samples if s["source"] == SOURCE_REAL)
     n_sim = len(samples) - n_real
@@ -389,22 +404,25 @@ def _save_csv(path, method_label, lookback_days, source_label, multiples,
         w.writerow([])
 
         # ---- DETAIL: one row per (pair, entry minute) ----
-        w.writerow(["DETAIL — one row per Thursday entry"])
-        w.writerow(["ticker", "thursday", "friday", "strike", "contract", "source",
-                    "entry_time", "entry_price", "friday_high", "max_return_multiple"]
+        w.writerow(["DETAIL — one row per entry-day entry"])
+        w.writerow(["ticker", "entry_day", "entry_weekday", "expiry_day",
+                    "expiry_weekday", "strike", "contract", "source",
+                    "entry_time", "entry_price", "expiry_high", "max_return_multiple"]
                    + [f"hit_{m:g}x" for m in multiples])
+        wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         for ticker in config.tickers:
             for s in by_ticker.get(ticker, []):
                 for minute in ENTRY_MINUTES:
                     ep = s["entries"].get(minute)
                     if ep is None:
                         continue
-                    fh = s["fri_high"]
+                    fh = s["exp_high"]
                     max_ret = (fh / ep) - 1.0
                     src = "REAL" if s["source"] == SOURCE_REAL else "SIM"
-                    w.writerow([ticker, s["thu"], s["fri"], s["strike"], s["contract"],
-                                src, minute_to_str(minute), round(ep, 4), round(fh, 4),
-                                round(max_ret, 4)]
+                    w.writerow([ticker, s["entry_date"], wd[s["entry_date"].weekday()],
+                                s["expiry_date"], wd[s["expiry_date"].weekday()],
+                                s["strike"], s["contract"], src, minute_to_str(minute),
+                                round(ep, 4), round(fh, 4), round(max_ret, 4)]
                                + [int(fh >= ep * (1.0 + m)) for m in multiples])
         w.writerow([])
 
@@ -439,11 +457,13 @@ def run(lookback_days, multiples, method_label="THURSDAY → FRIDAY call probabi
     print(bold("═" * 84))
 
     fetcher, source_label = get_fetcher()
-    pairs = get_past_thursday_friday_pairs(lookback_days)
+    pairs = get_past_weekly_pairs(lookback_days)
+    shifted = sum(1 for e, x in pairs if x.weekday() != 4)
     print(f"  Data source : {source_label}")
     print(f"  Tickers     : {', '.join(config.tickers)}")
-    print(f"  Thu→Fri pairs in window : {len(pairs)}")
-    print(f"  Entry minutes (Thu)     : "
+    print(f"  Weekly pairs in window  : {len(pairs)}  "
+          f"(normal Thu→Fri; {shifted} shifted to Wed→Thu for a closed Friday)")
+    print(f"  Entry minutes (entry day): "
           f"{', '.join(minute_to_str(m) for m in ENTRY_MINUTES)}")
     print(f"  {_legend(multiples)}\n")
 

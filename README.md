@@ -2,12 +2,31 @@
 
 This branch answers one question:
 
-> **If I buy the ATM Friday-expiry call on _Thursday_ between 3:55 and 3:59 PM ET,
-> how often does it reach a given return target at _any point_ on Friday?**
+> **If I buy the ATM weekly call the day before expiry between 3:55 and 3:59 PM
+> ET, how often does it reach a given return target at _any point_ on the
+> expiry day?**
 
-For each Thursday entry minute (3:55, 3:56, 3:57, 3:58, 3:59), across every
-Thursday→Friday pair in the lookback window, it measures the option's **Friday
-session high** and reports the probability that high hit each return target.
+For each entry minute (3:55, 3:56, 3:57, 3:58, 3:59), across every weekly pair
+in the lookback window, it measures the option's **expiry-day session high** and
+reports the probability that high hit each return target.
+
+### Which days? (holiday-aware, no skipped weeks, no sim)
+
+The weekly expiry is **Friday**, so you normally buy **Thursday**. But when that
+Friday is a market holiday (e.g. **Good Friday**), the option expires
+**Thursday** instead, so the entry rolls back to **Wednesday**:
+
+| Week | Buy (entry) | Expiry / tracked day |
+|------|-------------|----------------------|
+| Normal | **Thursday** 3:55–3:59 PM | Friday |
+| Friday closed | **Wednesday** 3:55–3:59 PM | Thursday |
+
+This way no week is dropped and the holiday weeks stay on **real** data instead
+of falling back to a simulated phantom-Friday. The market holidays are computed
+from a built-in NYSE calendar (Good Friday, New Year, Juneteenth, July 4th,
+Christmas, etc. — including weekend observation). The run summary reports how
+many weeks were shifted, and the CSV tags each row with its entry/expiry
+weekday.
 
 ## Return targets (profit ÷ premium paid)
 
@@ -57,12 +76,12 @@ summary) and `.txt` (full tables) under `thu_fri_results/`.
   "did it touch X" answer is only as good as the price path it's measured on.
 - **yfinance + Black-Scholes** — automatic fallback that reconstructs option
   prices from the underlying's path and realized vol. Both legs of every
-  sample (Thursday entry and Friday path) always use the **same** source, so
-  the return ratio is never real-vs-simulated.
+  sample (entry-day price and expiry-day path) always use the **same** source,
+  so the return ratio is never real-vs-simulated.
 
-The Friday high uses each bar's **high** (a true intraday touch), and the
+The expiry-day high uses each bar's **high** (a true intraday touch), and the
 "time to expiry" used in any simulation counts **regular trading hours only**
-(the Thursday-night gap doesn't decay the option).
+(overnight gaps and intervening holidays don't decay the option).
 
 ## Project layout
 
