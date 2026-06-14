@@ -74,6 +74,7 @@ if __name__ == "__main__":
         days=[("Monday", 0)],
         combos=[("Monday only", ["Monday"])],
         size_fn=size_fn,
+        exclude_best_day=True,
         header_extra=(
             f"Position sizing: contracts = ceil(${TARGET_SPEND:.2f} / option_price), "
             f"min 1 — minimum ~${TARGET_SPEND * CONTRACT_MULTIPLIER:.0f} premium per "
