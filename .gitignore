@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+trades.csv
+backtest_results/
+thu_fri_results/
+.env
