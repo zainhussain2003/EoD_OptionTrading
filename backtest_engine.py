@@ -96,7 +96,7 @@ def build_representatives(records: list) -> tuple[dict, dict]:
     return reps, meta
 
 
-def compute_pair_stats(reps: dict, size_fn=None) -> dict:
+def compute_pair_stats(reps: dict, size_fn=None, drop_best: bool = False) -> dict:
     """Stats for EVERY (entry, exit) pair across all dates — feeds the heatmaps.
 
     Returns {(entry_m, exit_m): {wr, wins, n, avg, total}} where avg/total are
@@ -106,6 +106,11 @@ def compute_pair_stats(reps: dict, size_fn=None) -> dict:
     scaled by the contracts bought (per-share move × contracts), so avg/total
     reflect position-sized dollars/100. Wins are unaffected (the scale factor
     is always positive). Default None = 1 contract (original behaviour).
+
+    drop_best — when True, each timeframe's single best trade (its highest
+    payoff) is removed before computing wins/avg/total, so every schedule is
+    judged without its luckiest trade. A pair must still have >= MIN_SAMPLES
+    original trades to be considered; stats are then computed on the remainder.
     """
     payoffs = defaultdict(list)
     for d, prices in reps.items():
@@ -124,6 +129,8 @@ def compute_pair_stats(reps: dict, size_fn=None) -> dict:
     for (en, ex), pl in payoffs.items():
         if len(pl) < MIN_SAMPLES:
             continue
+        if drop_best:
+            pl = sorted(pl)[:-1]          # remove this timeframe's single best trade
         wins = sum(1 for p in pl if p > 0)
         stats[(en, ex)] = {
             "entry": en, "exit": ex, "wins": wins, "n": len(pl),
@@ -524,37 +531,41 @@ def _combo_stats(day_data, tickers, combo_days):
             "total": total, "avg": total / n}
 
 
-def _excluded_day_entry(ticker, dr, score_key, eligible, size_fn):
-    """Re-optimize one ticker/day after dropping its single best-P&L date.
-
-    Returns a day_data-style dict with an extra 'excluded_date'. When too few
-    dates remain to optimize, 'best' comes back None (handled by the printer).
-    """
-    traded = [r for r in dr["rows"] if r["pnl_dollars"] != ""]
+def _drop_best_trade_row(rows):
+    """Remove the single best (highest P&L) traded row. Returns (rows, date)."""
+    traded = [r for r in rows if r["pnl_dollars"] != ""]
     if not traded:
-        return {"excluded_date": None, "best": None, "rows": [], "summ": {},
-                "stats": {}, "optimal_key": None, "reps": {}, "meta": {}}
+        return rows, None
+    best = max(traded, key=lambda r: r["pnl_dollars"])
+    return [r for r in rows if r is not best], best["date"]
 
-    # The "best day" = the single date with the highest P&L at this ticker's
-    # chosen optimal entry/exit pair. Drop it, then re-run the full analysis.
-    best_row = max(traded, key=lambda r: r["pnl_dollars"])
-    excl_date = best_row["date"]
 
-    reps2 = {d: p for d, p in dr["reps"].items() if str(d) != excl_date}
-    meta2 = {d: m for d, m in dr["meta"].items() if str(d) != excl_date}
+def _drop_best_trade_entry(ticker, dr, score_key, eligible, size_fn):
+    """Re-score every timeframe with its OWN single best trade removed, then
+    re-optimize. The chosen schedule's per-day table also drops its best trade
+    (so the table + summary match how that schedule was scored).
 
-    stats2 = compute_pair_stats(reps2, size_fn)
+    Returns a day_data-style dict with 'drop_best' True and 'dropped_date' (the
+    chosen schedule's removed trade). 'best' is None when nothing can be scored.
+    """
+    reps = dr.get("reps") or {}
+    meta = dr.get("meta") or {}
+    empty = {"drop_best": True, "dropped_date": None, "best": None, "rows": [],
+             "summ": {}, "stats": {}, "optimal_key": None}
+    if not reps:
+        return empty
+
+    stats2 = compute_pair_stats(reps, size_fn, drop_best=True)
     best2, _ = find_optimal_pair(stats2, score_key, eligible)
     if best2 is None:
-        return {"excluded_date": excl_date, "best": None, "rows": [], "summ": {},
-                "stats": {}, "optimal_key": None, "reps": reps2, "meta": meta2}
+        return empty
 
     en, ex = best2["entry"], best2["exit"]
-    rows2 = per_day_pnl(ticker, reps2, meta2, en, ex, size_fn)
+    rows2 = per_day_pnl(ticker, reps, meta, en, ex, size_fn)
+    rows2, dropped_date = _drop_best_trade_row(rows2)
     summ2 = summarize(rows2)
-    return {"excluded_date": excl_date, "best": best2, "rows": rows2,
-            "summ": summ2, "stats": stats2, "optimal_key": (en, ex),
-            "reps": reps2, "meta": meta2}
+    return {"drop_best": True, "dropped_date": dropped_date, "best": best2,
+            "rows": rows2, "summ": summ2, "stats": stats2, "optimal_key": (en, ex)}
 
 
 def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
@@ -647,7 +658,7 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
 
 def run_byday(lookback_days, method_label, score_key, eligible,
               file_tag, header_extra="", days=None, combos=None, size_fn=None,
-              exclude_best_day=False):
+              drop_best_trade=False):
     """Day-of-week driver: finds a separate optimal (entry, exit) per weekday.
 
     days    — list of (day_name, weekday_int); defaults to Mon/Wed/Fri.
@@ -656,12 +667,13 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     size_fn — optional size_fn(entry_price) -> int contracts. When given, P&L
               and the optimizer reflect position sizing, and contract/cost
               columns appear in the output. Default None = 1 contract.
-    exclude_best_day — when True, after the normal analysis a second "WITHOUT
-              BEST DAY" pass is produced: for each ticker the single date with
-              the highest P&L (at that ticker's optimal pair) is dropped and the
-              whole analysis is re-optimized on the remaining dates. It is shown
-              right below the normal output AND saved to a separate
-              *_no_best_day.txt so you can compare side by side. Default False.
+    drop_best_trade — when True, after the normal analysis a second pass is
+              produced where EACH timeframe (entry/exit schedule) is re-scored
+              with its own single best trade removed, and the optimal schedule
+              is re-picked from those adjusted stats. The chosen schedule's
+              per-day table also drops its best trade. Shown right below the
+              normal output AND saved to a separate *_no_best_trade.txt so you
+              can compare side by side. Default False.
     The combo table is printed per equity and then for all tickers combined.
     """
     global LOOKBACK_DAYS
@@ -729,16 +741,16 @@ def run_byday(lookback_days, method_label, score_key, eligible,
                 "reps": reps, "meta": meta,
             }
 
-    # ── Optional "without best day" pass: drop each ticker's single best-P&L
-    #    date and re-optimize on the remaining dates ──────────────────────────
+    # ── Optional "without each timeframe's best trade" pass: re-score every
+    #    schedule minus its own best trade, then re-optimize ──────────────────
     day_data_excl = {}
-    if exclude_best_day:
+    if drop_best_trade:
         for key, dr in day_data.items():
             ticker, _day_name = key
             if dr is None:
                 day_data_excl[key] = None
                 continue
-            day_data_excl[key] = _excluded_day_entry(
+            day_data_excl[key] = _drop_best_trade_entry(
                 ticker, dr, score_key, eligible, size_fn)
 
     # ── Print routines (called twice: terminal + plain-text capture) ───────
@@ -771,12 +783,17 @@ def run_byday(lookback_days, method_label, score_key, eligible,
             for day_name, _ in DAYS:
                 dr = dd.get((ticker, day_name))
                 print(f"\n  {'─' * 4} {day_name} {'─' * 4}")
-                if dr is not None and dr.get("excluded_date"):
-                    print(yellow(f"  (best day excluded: {dr['excluded_date']})"))
+                if dr is not None and dr.get("drop_best"):
+                    note = "  (each schedule scored without its own best trade"
+                    if dr.get("dropped_date"):
+                        note += f"; chosen schedule dropped its best trade on {dr['dropped_date']})"
+                    else:
+                        note += ")"
+                    print(yellow(note))
                 if dr is None or dr.get("best") is None:
-                    if dr is not None and dr.get("excluded_date"):
-                        print(red("  No optimal pair after removing the best day "
-                                  "(too few dates remain)."))
+                    if dr is not None and dr.get("drop_best"):
+                        print(red("  No optimal pair after removing each "
+                                  "timeframe's best trade (too few trades remain)."))
                     else:
                         print(red("  No optimal pair found "
                                   "(insufficient data or no pair met the criteria)."))
@@ -793,14 +810,15 @@ def run_byday(lookback_days, method_label, score_key, eligible,
 
     def _print_excl_banner():
         print(bold("\n" + "█" * 78))
-        print(bold("  WITHOUT BEST DAY  —  re-optimized after dropping each "
-                   "ticker's single best-P&L date"))
-        print(bold("  (shows how much the result above leaned on one day)"))
+        print(bold("  WITHOUT EACH TIMEFRAME'S BEST TRADE  —  every entry/exit "
+                   "schedule re-scored"))
+        print(bold("  with its single best trade removed, then re-optimized"))
+        print(bold("  (shows how much each schedule leaned on one lucky trade)"))
         print(bold("█" * 78))
 
     # Print to terminal (ANSI colours if TTY)
     _print_all(day_data)
-    if exclude_best_day:
+    if drop_best_trade:
         _print_excl_banner()
         _print_all(day_data_excl)
 
@@ -810,7 +828,7 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     txt_buf = io.StringIO()
     with contextlib.redirect_stdout(txt_buf):
         _print_all(day_data)
-        if exclude_best_day:
+        if drop_best_trade:
             _print_excl_banner()
             _print_all(day_data_excl)
     txt_content = txt_buf.getvalue()
@@ -835,23 +853,23 @@ def run_byday(lookback_days, method_label, score_key, eligible,
         f.write(hdr)
         f.write(txt_content)
 
-    # Separate "without best day" file for side-by-side comparison
+    # Separate "without each timeframe's best trade" file for side-by-side use
     excl_path = None
-    if exclude_best_day:
+    if drop_best_trade:
         excl_buf = io.StringIO()
         with contextlib.redirect_stdout(excl_buf):
             _print_excl_banner()
             _print_all(day_data_excl)
         excl_content = excl_buf.getvalue()
         excl_hdr = (
-            f"BACKTEST BY DAY — {method_label}   [WITHOUT BEST DAY]\n"
-            f"Each ticker's single best-P&L date is dropped and the analysis is\n"
-            f"re-optimized on the remaining dates.\n"
+            f"BACKTEST BY DAY — {method_label}   [WITHOUT EACH TIMEFRAME'S BEST TRADE]\n"
+            f"Every entry/exit schedule is re-scored with its own single best\n"
+            f"trade removed, then the optimal schedule is re-picked.\n"
             f"Lookback = {lookback_days} calendar days\n"
             f"Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  {source_label}\n"
             f"P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares\n"
             + "=" * 78 + "\n\n")
-        excl_path = os.path.join(RESULTS_DIR, f"{base}_no_best_day.txt")
+        excl_path = os.path.join(RESULTS_DIR, f"{base}_no_best_trade.txt")
         with open(excl_path, "w", encoding="utf-8") as f:
             f.write(excl_hdr)
             f.write(excl_content)
@@ -860,10 +878,10 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     print(f"  {cyan('Saved CSV:')} {bold(csv_path)}")
     print(f"  {cyan('Saved TXT:')} {bold(txt_path)}")
     if excl_path:
-        print(f"  {cyan('Saved TXT (no best day):')} {bold(excl_path)}")
+        print(f"  {cyan('Saved TXT (no best trade):')} {bold(excl_path)}")
     print(f"  CSV: structured data (detail + summary + combos).")
-    print(f"  TXT: full heatmap output — normal analysis, then WITHOUT BEST DAY below.")
+    print(f"  TXT: normal analysis, then the no-best-trade pass below it.")
     if excl_path:
-        print(f"  TXT (no best day): just the re-optimized 'best day removed' analysis.")
+        print(f"  TXT (no best trade): just the per-timeframe best-trade-removed analysis.")
     print(bold("─" * 78))
     print()
