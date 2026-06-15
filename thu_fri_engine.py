@@ -58,8 +58,8 @@ from config import Config
 from models import SOURCE_REAL, SOURCE_SIM
 from utils.date_utils import (
     ET, get_past_weekly_pairs, entry_window_start_utc,
-    window_end_utc, session_start_utc, detect_strike_interval, get_atm_strikes,
-    format_contract_symbol, minute_to_str, is_trading_day,
+    window_end_utc, session_start_utc, detect_strike_interval,
+    get_strike_at_or_above, format_contract_symbol, minute_to_str, is_trading_day,
 )
 from utils.math_utils import black_scholes_call, realized_vol
 
@@ -266,8 +266,11 @@ def collect_samples(fetcher, config, pairs):
                 continue
             spot = float(stock["close"].iloc[-1])     # ~3:59 PM entry-day spot
             interval = detect_strike_interval(spot)
-            lo, hi = get_atm_strikes(spot, interval)
-            strikes = sorted({lo, hi}, key=lambda k: abs(k - spot))  # nearest first
+            # Buy the strike AT or ABOVE spot (ATM if exact, else first OTM call).
+            # Never below. The second entry is only a data-availability fallback
+            # (still above spot) for the rare week the exact strike has no bars.
+            base = get_strike_at_or_above(spot, interval)
+            strikes = [base, round(base + interval, 2)]
 
             sample = _build_sample(fetcher, ticker, entry_d, expiry_d, strikes,
                                    config.risk_free_rate, sigma)

@@ -225,6 +225,20 @@ def get_atm_strikes(spot: float, interval: float | None = None) -> tuple[float, 
     return round(lower, 2), round(upper, 2)
 
 
+def get_strike_at_or_above(spot: float, interval: float | None = None) -> float:
+    """Smallest standard strike that is >= spot — the call you'd actually buy.
+
+    Picks the at-the-money strike when spot sits exactly on one, otherwise the
+    first strike ABOVE spot. Never returns a strike below spot. Examples
+    (interval 2.5): spot 400.25 -> 402.5;  spot 400.00 -> 400.0.
+    """
+    if interval is None:
+        interval = detect_strike_interval(spot)
+    # round() first so float noise (e.g. 160.00000004) doesn't bump us a strike up.
+    n = math.ceil(round(spot / interval, 6))
+    return round(n * interval, 2)
+
+
 def minute_to_str(minute_of_day: int) -> str:
     """Convert 915 → '3:15 PM'"""
     h = minute_of_day // 60

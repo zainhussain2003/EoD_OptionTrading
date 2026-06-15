@@ -50,6 +50,18 @@ target_price = entry_price × (1 + multiple)
 > 100%.) Change `RETURN_MULTIPLES` at the top of the script if you want a
 > different set, e.g. `[2, 3, 4, 5]` for "reach $1/$1.5/$2/$2.5 from $0.50".
 
+### Which strike?
+
+The call bought is the standard strike **at or above** the entry-day spot — the
+ATM strike when spot sits exactly on one, otherwise the first strike **above**
+it. It is never a strike below spot. Examples (with $2.50 strike spacing):
+
+| Spot | Strike bought |
+|------|---------------|
+| 400.25 | **402.50** (first strike above) |
+| 400.00 | **400.00** (exact ATM) |
+| 401.00 | 402.50 |
+
 ## Run it
 
 ```bash
