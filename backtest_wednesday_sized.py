@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-BACKTEST FRIDAY ONLY  —  TARGET-SPEND POSITION SIZING
+BACKTEST WEDNESDAY ONLY  —  TARGET-SPEND POSITION SIZING
 
-Identical to backtest_friday_expProfit.py (Friday 0DTE, max-expected-profit
-scoring) with ONE change: instead of always buying exactly 1 contract, it buys
-enough contracts to spend a minimum target amount per trade.
+Identical to backtest_friday_sized.py (max-expected-profit scoring with
+target-spend position sizing) with ONE change: it looks at WEDNESDAY 0DTE
+expiries only (the option expires the same day). Instead of always buying
+exactly 1 contract, it buys enough contracts to spend a minimum target amount
+per trade.
 
     contracts = ceil(TARGET_SPEND / option_price), minimum 1
 
@@ -40,7 +42,7 @@ TARGET_SPEND  = 1.00         # <───── minimum premium per share per tr
 OUTLIER_MAX   = 2000         # <───── 2nd pass drops winning trades over $ this
 
 # ──────────────────────────────────────────────────────────────────────────
-# Engine below. Run with:   python backtest_friday_sized.py
+# Engine below. Run with:   python backtest_wednesday_sized.py
 # ──────────────────────────────────────────────────────────────────────────
 import math
 
@@ -70,12 +72,11 @@ if __name__ == "__main__":
         method_label="MAX EXPECTED PROFIT, target-spend sized (win_rate × avg_payoff)",
         score_key=score_key,
         eligible=eligible,
-        file_tag="friday_sized",
-        days=[("Friday", 4)],
-        combos=[("Friday only", ["Friday"])],
+        file_tag="wednesday_sized",
+        days=[("Wednesday", 2)],
+        combos=[("Wednesday only", ["Wednesday"])],
         size_fn=size_fn,
         outlier_max=OUTLIER_MAX,
-        friday_thursday_fallback=True,
         header_extra=(
             f"Position sizing: contracts = ceil(${TARGET_SPEND:.2f} / option_price), "
             f"min 1 — minimum ~${TARGET_SPEND * CONTRACT_MULTIPLIER:.0f} premium per "

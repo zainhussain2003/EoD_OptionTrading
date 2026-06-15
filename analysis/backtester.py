@@ -24,6 +24,11 @@ class Backtester:
         # Off by default so the standard --backtest path is unchanged.
         self.capture_daily = False
         self.daily_capture: dict = defaultdict(list)
+        # When True, a Friday with no data (market closed) falls back to the
+        # preceding Thursday's REAL data/expiry (the weekly option moves to
+        # Thursday). Real-only on that fallback — never simulated. Opt-in so
+        # only the Friday sized backtest uses it.
+        self.friday_thursday_fallback = False
 
     def run(self, tickers: list[str] | None = None) -> list[BacktestResult]:
         tickers = tickers or self.config.tickers
@@ -55,6 +60,10 @@ class Backtester:
         dates_used = 0
 
         for mwf_date in past_dates:
+            # exp_date = the date whose data/expiry we actually use. Normally the
+            # MWF date itself; for a closed Friday it falls back to Thursday.
+            exp_date = mwf_date
+            real_only = False
             win_start = window_start_utc(mwf_date)
             win_end = window_end_utc(mwf_date)
 
@@ -67,6 +76,24 @@ class Backtester:
                 stock_bars = self.fetcher.fetch_historical_stock_bars(
                     ticker, win_start, win_end, minutes=5
                 )
+
+            # Closed Friday → use the preceding Thursday's REAL data/expiry.
+            if ((stock_bars is None or stock_bars.empty)
+                    and self.friday_thursday_fallback and mwf_date.weekday() == 4):
+                thu = mwf_date - timedelta(days=1)
+                t_start = window_start_utc(thu)
+                t_end = window_end_utc(thu)
+                thu_bars = self.fetcher.fetch_historical_stock_bars(
+                    ticker, t_start, t_end, minutes=1)
+                if thu_bars is None or thu_bars.empty:
+                    thu_bars = self.fetcher.fetch_historical_stock_bars(
+                        ticker, t_start, t_end, minutes=5)
+                if thu_bars is not None and not thu_bars.empty:
+                    exp_date = thu
+                    real_only = True
+                    win_start, win_end = t_start, t_end
+                    stock_bars = thu_bars
+
             if stock_bars is None or stock_bars.empty:
                 n_skipped += 1
                 pull_details.append(DataPullDetail(
@@ -74,6 +101,15 @@ class Backtester:
                     source=SOURCE_NO_STOCK, n_bars=0,
                     note='no stock bars in 3-4 PM window',
                 ))
+                # Friday fallback: surface the closed week as a "missing data" row
+                # instead of silently dropping it.
+                if (self.capture_daily and self.friday_thursday_fallback
+                        and mwf_date.weekday() == 4):
+                    self.daily_capture[ticker].append({
+                        'date': mwf_date, 'strike': 0.0, 'contract': '',
+                        'source': SOURCE_NO_STOCK, 'spot_3pm': 0.0, 'prices': {},
+                        'note': 'missing data (Fri & Thu closed)',
+                    })
                 continue
 
             # Spot price at start of window for ATM strike determination
@@ -81,9 +117,10 @@ class Backtester:
             interval = detect_strike_interval(spot_3pm)
             lower_strike, upper_strike = get_atm_strikes(spot_3pm, interval)
 
+            captured_any = False
             # Try both ATM strikes, use the one we can get data for
             for atm_strike in [lower_strike, upper_strike]:
-                contract_sym = format_contract_symbol(ticker, mwf_date, atm_strike)
+                contract_sym = format_contract_symbol(ticker, exp_date, atm_strike)
 
                 # Try real option bars first
                 opt_bars = self.fetcher.fetch_historical_option_bars(
@@ -95,10 +132,13 @@ class Backtester:
                     source = SOURCE_REAL
                     n_real += 1
                     detail_sigma = 0.0
+                elif real_only:
+                    # Thursday fallback is real-only — do not simulate.
+                    continue
                 else:
                     # Simulate using Black-Scholes + stock prices
                     minute_prices = self._simulate_option_prices(
-                        stock_bars, atm_strike, mwf_date, daily_closes
+                        stock_bars, atm_strike, exp_date, daily_closes
                     )
                     source = SOURCE_SIM
                     n_sim += 1
@@ -116,15 +156,27 @@ class Backtester:
 
                 if self.capture_daily:
                     self.daily_capture[ticker].append({
-                        'date': mwf_date,
+                        'date': mwf_date,            # bucket by the nominal MWF date
                         'strike': atm_strike,
-                        'contract': contract_sym,
+                        'contract': contract_sym,    # encodes the real expiry used
                         'source': source,
                         'spot_3pm': spot_3pm,
                         'prices': dict(minute_prices),
+                        'note': ('Fri closed → Thu expiry'
+                                 if exp_date != mwf_date else ''),
                     })
+                    captured_any = True
 
                 self._accumulate_payoffs(minute_prices, payoffs, prefix=(atm_strike,))
+
+            # Thursday existed but no REAL option bars → mark the week missing
+            # (real-only fallback never simulates).
+            if (real_only and not captured_any and self.capture_daily):
+                self.daily_capture[ticker].append({
+                    'date': mwf_date, 'strike': 0.0, 'contract': '',
+                    'source': SOURCE_NO_STOCK, 'spot_3pm': spot_3pm, 'prices': {},
+                    'note': 'missing data (no real Thu option bars)',
+                })
 
             dates_used += 1
             time.sleep(0.3)  # rate limit courtesy pause
