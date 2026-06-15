@@ -37,6 +37,7 @@ Saves two files to backtest_results/ (with contracts + cost columns):
 
 LOOKBACK_DAYS = 730          # <───── window to test (calendar days)
 TARGET_SPEND  = 1.00         # <───── minimum premium per share per trade
+OUTLIER_MAX   = 2000         # <───── 2nd pass drops winning trades over $ this
 
 # ──────────────────────────────────────────────────────────────────────────
 # Engine below. Run with:   python backtest_friday_sized.py
@@ -73,7 +74,8 @@ if __name__ == "__main__":
         days=[("Friday", 4)],
         combos=[("Friday only", ["Friday"])],
         size_fn=size_fn,
-        drop_best_trade=True,
+        outlier_max=OUTLIER_MAX,
+        friday_thursday_fallback=True,
         header_extra=(
             f"Position sizing: contracts = ceil(${TARGET_SPEND:.2f} / option_price), "
             f"min 1 — minimum ~${TARGET_SPEND * CONTRACT_MULTIPLIER:.0f} premium per "

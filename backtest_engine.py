@@ -29,7 +29,7 @@ except ImportError:
 
 from config import Config
 from analysis.backtester import Backtester
-from models import SOURCE_REAL
+from models import SOURCE_REAL, SOURCE_NO_STOCK
 from utils.date_utils import minute_to_str
 
 # 1 option contract controls 100 shares — payoff per share × 100 = dollars/contract.
@@ -96,7 +96,7 @@ def build_representatives(records: list) -> tuple[dict, dict]:
     return reps, meta
 
 
-def compute_pair_stats(reps: dict, size_fn=None, drop_best: bool = False) -> dict:
+def compute_pair_stats(reps: dict, size_fn=None, outlier_max=None) -> dict:
     """Stats for EVERY (entry, exit) pair across all dates — feeds the heatmaps.
 
     Returns {(entry_m, exit_m): {wr, wins, n, avg, total}} where avg/total are
@@ -107,10 +107,10 @@ def compute_pair_stats(reps: dict, size_fn=None, drop_best: bool = False) -> dic
     reflect position-sized dollars/100. Wins are unaffected (the scale factor
     is always positive). Default None = 1 contract (original behaviour).
 
-    drop_best — when True, each timeframe's single best trade (its highest
-    payoff) is removed before computing wins/avg/total, so every schedule is
-    judged without its luckiest trade. A pair must still have >= MIN_SAMPLES
-    original trades to be considered; stats are then computed on the remainder.
+    outlier_max — when set (dollars), each timeframe drops every WINNING trade
+    whose dollar P&L exceeds this threshold before computing wins/avg/total, so
+    no schedule is flattered by an outlier win. A pair must still have
+    >= MIN_SAMPLES non-outlier trades to be considered.
     """
     payoffs = defaultdict(list)
     for d, prices in reps.items():
@@ -127,10 +127,11 @@ def compute_pair_stats(reps: dict, size_fn=None, drop_best: bool = False) -> dic
 
     stats = {}
     for (en, ex), pl in payoffs.items():
+        if outlier_max is not None:
+            # Drop winning trades whose dollar P&L exceeds the threshold.
+            pl = [p for p in pl if p * CONTRACT_MULTIPLIER <= outlier_max]
         if len(pl) < MIN_SAMPLES:
             continue
-        if drop_best:
-            pl = sorted(pl)[:-1]          # remove this timeframe's single best trade
         wins = sum(1 for p in pl if p > 0)
         stats[(en, ex)] = {
             "entry": en, "exit": ex, "wins": wins, "n": len(pl),
@@ -169,15 +170,21 @@ def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int,
         xp, xm = price_at(prices, exit_m, after=em)
 
         if ep is None or xp is None or ep <= 0:
+            if rec.get("source") == SOURCE_NO_STOCK:
+                skip_src = "MISS"
+                skip_note = rec.get("note") or "missing data (market closed)"
+            else:
+                skip_src = "REAL" if rec["source"] == SOURCE_REAL else "SIM"
+                skip_note = "no usable price at entry/exit"
             rows.append({
                 "date": str(d), "ticker": ticker,
                 "contract_symbol": rec["contract"], "strike": rec["strike"],
-                "source": "REAL" if rec["source"] == SOURCE_REAL else "SIM",
+                "source": skip_src,
                 "entry_time": minute_to_str(entry_m), "entry_price": "",
                 "exit_time": minute_to_str(exit_m), "exit_price": "",
                 "payoff_per_share": "", "contracts": "", "cost_dollars": "",
                 "pnl_dollars": "",
-                "profitable": "", "note": "no usable price at entry/exit",
+                "profitable": "", "note": skip_note,
             })
             continue
 
@@ -193,7 +200,7 @@ def per_day_pnl(ticker: str, reps: dict, meta: dict, entry_m: int, exit_m: int,
             "contracts": qty,
             "cost_dollars": round(ep * CONTRACT_MULTIPLIER * qty, 2),
             "pnl_dollars": round(payoff * CONTRACT_MULTIPLIER * qty, 2),
-            "profitable": payoff > 0, "note": "",
+            "profitable": payoff > 0, "note": rec.get("note", ""),
         })
     return rows
 
@@ -531,40 +538,43 @@ def _combo_stats(day_data, tickers, combo_days):
             "total": total, "avg": total / n}
 
 
-def _drop_best_trade_row(rows):
-    """Remove the single best (highest P&L) traded row. Returns (rows, date)."""
-    traded = [r for r in rows if r["pnl_dollars"] != ""]
-    if not traded:
-        return rows, None
-    best = max(traded, key=lambda r: r["pnl_dollars"])
-    return [r for r in rows if r is not best], best["date"]
+def _remove_outlier_rows(rows, outlier_max):
+    """Drop winning rows whose dollar P&L exceeds outlier_max. Returns
+    (kept_rows, [removed_dates])."""
+    kept, removed = [], []
+    for r in rows:
+        if r["pnl_dollars"] != "" and r["pnl_dollars"] > outlier_max:
+            removed.append(r["date"])
+        else:
+            kept.append(r)
+    return kept, removed
 
 
-def _drop_best_trade_entry(ticker, dr, score_key, eligible, size_fn):
-    """Re-score every timeframe with its OWN single best trade removed, then
-    re-optimize. The chosen schedule's per-day table also drops its best trade
-    (so the table + summary match how that schedule was scored).
+def _outlier_removed_entry(ticker, dr, score_key, eligible, size_fn, outlier_max):
+    """Re-score every timeframe with its winning outlier trades (dollar P&L >
+    outlier_max) removed, then re-optimize. The chosen schedule's per-day table
+    and summary drop the same outlier trades (so they match the scoring).
 
-    Returns a day_data-style dict with 'drop_best' True and 'dropped_date' (the
-    chosen schedule's removed trade). 'best' is None when nothing can be scored.
+    Returns a day_data-style dict with 'drop_outlier' True and 'removed_dates'
+    (the chosen schedule's removed outliers). 'best' is None when nothing scores.
     """
     reps = dr.get("reps") or {}
     meta = dr.get("meta") or {}
-    empty = {"drop_best": True, "dropped_date": None, "best": None, "rows": [],
+    empty = {"drop_outlier": True, "removed_dates": [], "best": None, "rows": [],
              "summ": {}, "stats": {}, "optimal_key": None}
     if not reps:
         return empty
 
-    stats2 = compute_pair_stats(reps, size_fn, drop_best=True)
+    stats2 = compute_pair_stats(reps, size_fn, outlier_max=outlier_max)
     best2, _ = find_optimal_pair(stats2, score_key, eligible)
     if best2 is None:
         return empty
 
     en, ex = best2["entry"], best2["exit"]
     rows2 = per_day_pnl(ticker, reps, meta, en, ex, size_fn)
-    rows2, dropped_date = _drop_best_trade_row(rows2)
+    rows2, removed_dates = _remove_outlier_rows(rows2, outlier_max)
     summ2 = summarize(rows2)
-    return {"drop_best": True, "dropped_date": dropped_date, "best": best2,
+    return {"drop_outlier": True, "removed_dates": removed_dates, "best": best2,
             "rows": rows2, "summ": summ2, "stats": stats2, "optimal_key": (en, ex)}
 
 
@@ -658,7 +668,7 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
 
 def run_byday(lookback_days, method_label, score_key, eligible,
               file_tag, header_extra="", days=None, combos=None, size_fn=None,
-              drop_best_trade=False):
+              outlier_max=None, friday_thursday_fallback=False):
     """Day-of-week driver: finds a separate optimal (entry, exit) per weekday.
 
     days    — list of (day_name, weekday_int); defaults to Mon/Wed/Fri.
@@ -667,13 +677,15 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     size_fn — optional size_fn(entry_price) -> int contracts. When given, P&L
               and the optimizer reflect position sizing, and contract/cost
               columns appear in the output. Default None = 1 contract.
-    drop_best_trade — when True, after the normal analysis a second pass is
-              produced where EACH timeframe (entry/exit schedule) is re-scored
-              with its own single best trade removed, and the optimal schedule
+    outlier_max — when set (dollars), after the normal analysis a second pass is
+              produced where EACH timeframe is re-scored with its winning outlier
+              trades (dollar P&L > outlier_max) removed, and the optimal schedule
               is re-picked from those adjusted stats. The chosen schedule's
-              per-day table also drops its best trade. Shown right below the
-              normal output AND saved to a separate *_no_best_trade.txt so you
-              can compare side by side. Default False.
+              per-day table drops the same outliers. Shown right below the normal
+              output AND saved to a separate *_outliers_removed.txt. Default None.
+    friday_thursday_fallback — when True, a Friday with no data (market closed)
+              uses the preceding Thursday's REAL data/expiry instead (the weekly
+              option moves to Thursday); never simulated. Default False.
     The combo table is printed per equity and then for all tickers combined.
     """
     global LOOKBACK_DAYS
@@ -714,6 +726,7 @@ def run_byday(lookback_days, method_label, score_key, eligible,
 
     backtester = Backtester(fetcher, config)
     backtester.capture_daily = True
+    backtester.friday_thursday_fallback = friday_thursday_fallback
     backtester.run(config.tickers)
 
     # ── Compute per-ticker × per-weekday stats ─────────────────────────────
@@ -741,17 +754,17 @@ def run_byday(lookback_days, method_label, score_key, eligible,
                 "reps": reps, "meta": meta,
             }
 
-    # ── Optional "without each timeframe's best trade" pass: re-score every
-    #    schedule minus its own best trade, then re-optimize ──────────────────
+    # ── Optional "outliers removed" pass: re-score every schedule with its
+    #    winning outlier trades (P&L > outlier_max) removed, then re-optimize ──
     day_data_excl = {}
-    if drop_best_trade:
+    if outlier_max is not None:
         for key, dr in day_data.items():
             ticker, _day_name = key
             if dr is None:
                 day_data_excl[key] = None
                 continue
-            day_data_excl[key] = _drop_best_trade_entry(
-                ticker, dr, score_key, eligible, size_fn)
+            day_data_excl[key] = _outlier_removed_entry(
+                ticker, dr, score_key, eligible, size_fn, outlier_max)
 
     # ── Print routines (called twice: terminal + plain-text capture) ───────
     def _print_combo_table(dd, tickers, label):
@@ -783,17 +796,20 @@ def run_byday(lookback_days, method_label, score_key, eligible,
             for day_name, _ in DAYS:
                 dr = dd.get((ticker, day_name))
                 print(f"\n  {'─' * 4} {day_name} {'─' * 4}")
-                if dr is not None and dr.get("drop_best"):
-                    note = "  (each schedule scored without its own best trade"
-                    if dr.get("dropped_date"):
-                        note += f"; chosen schedule dropped its best trade on {dr['dropped_date']})"
+                if dr is not None and dr.get("drop_outlier"):
+                    removed = dr.get("removed_dates") or []
+                    if removed:
+                        note = (f"  (winning outliers > ${outlier_max:,.0f} removed per "
+                                f"schedule; chosen schedule removed {len(removed)}: "
+                                f"{', '.join(removed)})")
                     else:
-                        note += ")"
+                        note = (f"  (winning outliers > ${outlier_max:,.0f} removed per "
+                                f"schedule; chosen schedule had none)")
                     print(yellow(note))
                 if dr is None or dr.get("best") is None:
-                    if dr is not None and dr.get("drop_best"):
-                        print(red("  No optimal pair after removing each "
-                                  "timeframe's best trade (too few trades remain)."))
+                    if dr is not None and dr.get("drop_outlier"):
+                        print(red("  No optimal pair after removing outliers "
+                                  "(too few non-outlier trades remain)."))
                     else:
                         print(red("  No optimal pair found "
                                   "(insufficient data or no pair met the criteria)."))
@@ -810,15 +826,15 @@ def run_byday(lookback_days, method_label, score_key, eligible,
 
     def _print_excl_banner():
         print(bold("\n" + "█" * 78))
-        print(bold("  WITHOUT EACH TIMEFRAME'S BEST TRADE  —  every entry/exit "
-                   "schedule re-scored"))
-        print(bold("  with its single best trade removed, then re-optimized"))
-        print(bold("  (shows how much each schedule leaned on one lucky trade)"))
+        print(bold(f"  OUTLIERS REMOVED (winning trades > ${outlier_max:,.0f})  —  every "
+                   "entry/exit"))
+        print(bold("  schedule re-scored with its outlier wins removed, then re-optimized"))
+        print(bold("  (shows performance without the rare blowout winners)"))
         print(bold("█" * 78))
 
     # Print to terminal (ANSI colours if TTY)
     _print_all(day_data)
-    if drop_best_trade:
+    if outlier_max is not None:
         _print_excl_banner()
         _print_all(day_data_excl)
 
@@ -828,7 +844,7 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     txt_buf = io.StringIO()
     with contextlib.redirect_stdout(txt_buf):
         _print_all(day_data)
-        if drop_best_trade:
+        if outlier_max is not None:
             _print_excl_banner()
             _print_all(day_data_excl)
     txt_content = txt_buf.getvalue()
@@ -853,23 +869,24 @@ def run_byday(lookback_days, method_label, score_key, eligible,
         f.write(hdr)
         f.write(txt_content)
 
-    # Separate "without each timeframe's best trade" file for side-by-side use
+    # Separate "outliers removed" file for side-by-side comparison
     excl_path = None
-    if drop_best_trade:
+    if outlier_max is not None:
         excl_buf = io.StringIO()
         with contextlib.redirect_stdout(excl_buf):
             _print_excl_banner()
             _print_all(day_data_excl)
         excl_content = excl_buf.getvalue()
         excl_hdr = (
-            f"BACKTEST BY DAY — {method_label}   [WITHOUT EACH TIMEFRAME'S BEST TRADE]\n"
-            f"Every entry/exit schedule is re-scored with its own single best\n"
-            f"trade removed, then the optimal schedule is re-picked.\n"
+            f"BACKTEST BY DAY — {method_label}   [OUTLIERS REMOVED > ${outlier_max:,.0f}]\n"
+            f"Every entry/exit schedule is re-scored with its winning outlier\n"
+            f"trades (dollar P&L > ${outlier_max:,.0f}) removed, then the optimal\n"
+            f"schedule is re-picked.\n"
             f"Lookback = {lookback_days} calendar days\n"
             f"Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  {source_label}\n"
             f"P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares\n"
             + "=" * 78 + "\n\n")
-        excl_path = os.path.join(RESULTS_DIR, f"{base}_no_best_trade.txt")
+        excl_path = os.path.join(RESULTS_DIR, f"{base}_outliers_removed.txt")
         with open(excl_path, "w", encoding="utf-8") as f:
             f.write(excl_hdr)
             f.write(excl_content)
@@ -878,10 +895,10 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     print(f"  {cyan('Saved CSV:')} {bold(csv_path)}")
     print(f"  {cyan('Saved TXT:')} {bold(txt_path)}")
     if excl_path:
-        print(f"  {cyan('Saved TXT (no best trade):')} {bold(excl_path)}")
+        print(f"  {cyan('Saved TXT (outliers removed):')} {bold(excl_path)}")
     print(f"  CSV: structured data (detail + summary + combos).")
-    print(f"  TXT: normal analysis, then the no-best-trade pass below it.")
+    print(f"  TXT: normal analysis, then the outliers-removed pass below it.")
     if excl_path:
-        print(f"  TXT (no best trade): just the per-timeframe best-trade-removed analysis.")
+        print(f"  TXT (outliers removed): just the outlier-removed re-optimized analysis.")
     print(bold("─" * 78))
     print()
