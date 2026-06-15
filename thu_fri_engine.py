@@ -76,6 +76,12 @@ RESULTS_DIR = "thu_fri_results"
 SESSION_OPEN_MIN = 9 * 60 + 30
 SESSION_CLOSE_MIN = 16 * 60
 
+# STRATEGY exit: if the limit hasn't filled by this minute on the expiry day,
+# sell at this minute's price (3:55 PM ET). The limit's fill window is the
+# expiry-day open → this minute.
+EXIT_MINUTE = 15 * 60 + 55      # 3:55 PM ET
+EXIT_TOL = 3                    # accept a bar within this many minutes of EXIT_MINUTE
+
 
 # ── tiny ANSI helpers (no-op when output is piped to a file) ──────────────
 def _c(text, code):
@@ -163,7 +169,10 @@ def _build_sample(fetcher, ticker, entry_d, expiry_d, strikes, r, sigma):
     """Return a sample dict or None. Tries REAL bars first, then BS simulation.
 
     Sample = {entry_date, expiry_date, ticker, strike, contract, source,
-              exp_high, entries: {minute: entry_price}}
+              exp_high, exp_high_to_exit, exp_exit_price, entries: {minute: price}}
+    exp_high          — full-session (9:30–4:00) high, drives the touch table.
+    exp_high_to_exit  — high up to EXIT_MINUTE, drives the strategy's limit fill.
+    exp_exit_price    — price at EXIT_MINUTE, the strategy's fallback sell.
     Both legs share one source so the return ratio stays internally consistent.
     """
     e_start = entry_window_start_utc(entry_d)    # entry day 3:50 PM ET
@@ -180,6 +189,10 @@ def _build_sample(fetcher, ticker, entry_d, expiry_d, strikes, r, sigma):
         e_close = _bars_minute_field(e_opt, entry_d, "close", 950, 959)
         x_high_map = _bars_minute_field(x_opt, expiry_d, "high",
                                         SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
+        x_high_exit = _bars_minute_field(x_opt, expiry_d, "high",
+                                         SESSION_OPEN_MIN, EXIT_MINUTE)
+        x_close_map = _bars_minute_field(x_opt, expiry_d, "close",
+                                         SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
 
         entries = {}
         for m in ENTRY_MINUTES:
@@ -191,6 +204,8 @@ def _build_sample(fetcher, ticker, entry_d, expiry_d, strikes, r, sigma):
                 "entry_date": entry_d, "expiry_date": expiry_d, "ticker": ticker,
                 "strike": strike, "contract": contract, "source": SOURCE_REAL,
                 "exp_high": max(x_high_map.values()),
+                "exp_high_to_exit": max(x_high_exit.values()) if x_high_exit else None,
+                "exp_exit_price": _price_at(x_close_map, EXIT_MINUTE, EXIT_TOL),
                 "entries": entries,
             }
 
@@ -223,22 +238,30 @@ def _build_sample(fetcher, ticker, entry_d, expiry_d, strikes, r, sigma):
     if not entries:
         return None
 
-    # Expiry-day high: BS on each bar's HIGH spot (captures the intraday touch).
-    x_shigh = _bars_minute_field(x_stock, expiry_d, "high",
-                                 SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
-    x_opt_prices = []
-    for m, spot in x_shigh.items():
+    # Expiry-day option prices via BS. HIGH spot → option high (touch); CLOSE
+    # spot → option price at each minute (for the fallback exit).
+    def _bs_at(spot, expiry_d, m):
         et = datetime(expiry_d.year, expiry_d.month, expiry_d.day, m // 60, m % 60, tzinfo=ET)
         T = _T_years(et, expiry_d)
         px, *_ = black_scholes_call(spot, strike, T, r, sigma)
-        x_opt_prices.append(px)
-    if not x_opt_prices:
+        return px
+
+    x_shigh = _bars_minute_field(x_stock, expiry_d, "high",
+                                 SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
+    x_sclose = _bars_minute_field(x_stock, expiry_d, "close",
+                                  SESSION_OPEN_MIN, SESSION_CLOSE_MIN)
+    high_full = [_bs_at(spot, expiry_d, m) for m, spot in x_shigh.items()]
+    high_exit = [_bs_at(spot, expiry_d, m) for m, spot in x_shigh.items() if m <= EXIT_MINUTE]
+    close_opt = {m: _bs_at(spot, expiry_d, m) for m, spot in x_sclose.items()}
+    if not high_full:
         return None
 
     return {
         "entry_date": entry_d, "expiry_date": expiry_d, "ticker": ticker,
         "strike": strike, "contract": contract, "source": SOURCE_SIM,
-        "exp_high": max(x_opt_prices),
+        "exp_high": max(high_full),
+        "exp_high_to_exit": max(high_exit) if high_exit else None,
+        "exp_exit_price": _price_at(close_opt, EXIT_MINUTE, EXIT_TOL),
         "entries": entries,
     }
 
@@ -306,35 +329,61 @@ def minute_stats(samples, minute, multiples):
     }
 
 
+def strategy_stats(samples, minute, m):
+    """Net P&L of the limit-or-exit strategy for one entry minute and target m.
+
+    Rule: rest a limit at entry × (1 + m). During the expiry-day session up to
+    EXIT_MINUTE, if the high tags the limit you sell at the target (return = m).
+    Otherwise you sell at EXIT_MINUTE's price. Returns per-trade averages, or
+    None if too few usable samples.
+    """
+    rows = []
+    for s in samples:
+        ep = s["entries"].get(minute)
+        xp = s.get("exp_exit_price")
+        if ep is None or ep <= 0 or xp is None:
+            continue
+        target = ep * (1.0 + m)
+        hit = s.get("exp_high_to_exit")
+        if hit is not None and hit >= target:
+            ret = m                       # limit filled → exactly the target return
+            filled = True
+        else:
+            ret = (xp / ep) - 1.0         # sold at the 3:55 PM fallback price
+            filled = False
+        rows.append((ret, filled))
+    if len(rows) < MIN_SAMPLES:
+        return None
+    n = len(rows)
+    fills = sum(1 for r, f in rows if f)
+    wins = sum(1 for r, f in rows if r > 0)
+    nonfill = [r for r, f in rows if not f]
+    avg_ret = sum(r for r, _ in rows) / n
+    return {
+        "minute": minute, "m": m, "n": n,
+        "fill_rate": fills / n,
+        "win_rate": wins / n,
+        "avg_ret": avg_ret,                       # mean fractional return per trade
+        "net_per_100": avg_ret * 100.0,           # $ per $100 staked
+        "avg_nonfill_ret": (sum(nonfill) / len(nonfill)) if nonfill else 0.0,
+    }
+
+
 # ── printing ─────────────────────────────────────────────────────────────
 def _legend(multiples):
     parts = [f"{m:g}x→×{1.0 + m:.2f}" for m in multiples]
     return "RETURN targets (price multiple): " + "  ".join(parts)
 
 
-def _print_ticker_block(ticker, samples, multiples):
-    print(bold("=" * 84))
-    print(bold(f"  {ticker}"))
-    print(bold("=" * 84))
-    if not samples:
-        print(red("  No usable entry→expiry samples for this ticker.\n"))
-        return
-    n_real = sum(1 for s in samples if s["source"] == SOURCE_REAL)
-    n_sim = len(samples) - n_real
-    src = (green("REAL option bars") if n_sim == 0
-           else yellow("SIMULATED (Black-Scholes)") if n_real == 0
-           else yellow(f"MIXED ({n_real} real / {n_sim} sim)"))
-    print(f"  Data source : {src}   |   {len(samples)} Thu→Fri pairs collected")
-    print(f"  {_legend(multiples)}")
-    print()
-
+def _print_touch_table(samples, multiples):
+    """Probability the expiry-day HIGH reached each target (best-case touch)."""
+    print(f"  TOUCH PROBABILITY — chance the expiry-day high reached the target")
     head = f"  {'Entry':>6} {'N':>4} {'AvgEntry':>9} {'AvgMax':>7} {'BestMax':>8} "
     for m in multiples:
         head += f"{('P>=' + format(m, 'g') + 'x'):>9}"
     print(head)
-    rule = f"  {'-'*6} {'-'*4} {'-'*9} {'-'*7} {'-'*8} " + " ".join('-'*8 for _ in multiples)
-    print(rule)
-
+    print(f"  {'-'*6} {'-'*4} {'-'*9} {'-'*7} {'-'*8} "
+          + " ".join('-'*8 for _ in multiples))
     for minute in ENTRY_MINUTES:
         st = minute_stats(samples, minute, multiples)
         label = minute_to_str(minute).replace(" PM", "")
@@ -352,6 +401,55 @@ def _print_ticker_block(ticker, samples, multiples):
     print()
 
 
+def _print_strategy_table(samples, multiples):
+    """Net P&L of the limit-or-3:55-exit strategy, per target and entry minute."""
+    W = 14
+    print(f"  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on")
+    print(f"  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / "
+          f"fill%")
+    h1 = f"  {'Entry':>6} {'N':>4} "
+    for m in multiples:
+        h1 += " " + f"{format(m, 'g') + 'x target':^{W}}"
+    print(h1)
+    h2 = f"  {'':>6} {'':>4} " + "".join(" " + f"{'net/100  fill':^{W}}" for _ in multiples)
+    print(h2)
+    print(f"  {'-'*6} {'-'*4} " + "".join(" " + '-' * W for _ in multiples))
+    for minute in ENTRY_MINUTES:
+        label = minute_to_str(minute).replace(" PM", "")
+        n_val, cells = "", ""
+        for m in multiples:
+            ss = strategy_stats(samples, minute, m)
+            if ss is None:
+                cells += " " + f"{'—':^{W}}"
+                continue
+            n_val = ss["n"]
+            txt = f"{ss['net_per_100']:+6.1f} {ss['fill_rate']:>3.0%}"
+            padded = f"{txt:^{W}}"
+            col = green if ss["net_per_100"] > 0 else red
+            cells += " " + col(padded)
+        print(f"  {label:>6} {str(n_val):>4} {cells}")
+    print()
+
+
+def _print_block(title, samples, multiples, show_source=True):
+    print(bold("=" * 84))
+    print(bold(f"  {title}"))
+    print(bold("=" * 84))
+    if not samples:
+        print(red("  No usable entry→expiry samples.\n"))
+        return
+    if show_source:
+        n_real = sum(1 for s in samples if s["source"] == SOURCE_REAL)
+        n_sim = len(samples) - n_real
+        src = (green("REAL option bars") if n_sim == 0
+               else yellow("SIMULATED (Black-Scholes)") if n_real == 0
+               else yellow(f"MIXED ({n_real} real / {n_sim} sim)"))
+        print(f"  Data source : {src}   |   {len(samples)} weekly pairs collected")
+    print(f"  {_legend(multiples)}\n")
+    _print_touch_table(samples, multiples)
+    _print_strategy_table(samples, multiples)
+
+
 def _pool_all(by_ticker):
     pooled = []
     for samples in by_ticker.values():
@@ -361,36 +459,9 @@ def _pool_all(by_ticker):
 
 def _print_all(by_ticker, config, multiples):
     for ticker in config.tickers:
-        _print_ticker_block(ticker, by_ticker.get(ticker, []), multiples)
-    pooled = _pool_all(by_ticker)
-    print(bold("=" * 84))
-    print(bold("  ALL TICKERS COMBINED"))
-    print(bold("=" * 84))
-    if not pooled:
-        print(red("  No samples collected across any ticker.\n"))
-        return
-    print(f"  {_legend(multiples)}\n")
-    head = f"  {'Entry':>6} {'N':>4} {'AvgEntry':>9} {'AvgMax':>7} {'BestMax':>8} "
-    for m in multiples:
-        head += f"{('P>=' + format(m, 'g') + 'x'):>9}"
-    print(head)
-    print(f"  {'-'*6} {'-'*4} {'-'*9} {'-'*7} {'-'*8} "
-          + " ".join('-'*8 for _ in multiples))
-    for minute in ENTRY_MINUTES:
-        st = minute_stats(pooled, minute, multiples)
-        label = minute_to_str(minute).replace(" PM", "")
-        if st is None:
-            print(f"  {label:>6} {yellow('(insufficient samples)')}")
-            continue
-        row = (f"  {label:>6} {st['n']:>4} ${st['avg_entry']:>7.2f} "
-               f"{st['avg_max_ratio']:>6.2f}x {st['best_ratio']:>7.2f}x ")
-        for m in multiples:
-            p = st["probs"][m]
-            cell = f"{p:>8.0%}"
-            col = green if p >= 0.50 else (yellow if p >= 0.30 else None)
-            row += (col(cell) if col else cell) + " "
-        print(row)
-    print()
+        _print_block(ticker, by_ticker.get(ticker, []), multiples)
+    _print_block("ALL TICKERS COMBINED", _pool_all(by_ticker), multiples,
+                 show_source=False)
 
 
 # ── CSV ──────────────────────────────────────────────────────────────────
@@ -447,6 +518,25 @@ def _save_csv(path, method_label, lookback_days, source_label, multiples,
                             round(st["avg_entry"], 4), round(st["avg_max_ratio"], 4),
                             round(st["best_ratio"], 4)]
                            + [f"{st['probs'][m]:.4f}" for m in multiples])
+        w.writerow([])
+
+        # ---- STRATEGY P&L: limit at target, else sell 3:55 PM expiry day ----
+        w.writerow(["STRATEGY P&L — limit at target, else sell 3:55 PM on expiry day"])
+        w.writerow(["ticker", "entry_time", "target_multiple", "n_samples",
+                    "fill_rate", "win_rate", "avg_net_return", "net_dollars_per_100",
+                    "avg_loss_on_nonfills"])
+        for name, samples in scopes:
+            for minute in ENTRY_MINUTES:
+                for m in multiples:
+                    ss = strategy_stats(samples, minute, m)
+                    if ss is None:
+                        w.writerow([name, minute_to_str(minute), f"{m:g}x",
+                                    0, "", "", "", "", ""])
+                        continue
+                    w.writerow([name, minute_to_str(minute), f"{m:g}x", ss["n"],
+                                f"{ss['fill_rate']:.4f}", f"{ss['win_rate']:.4f}",
+                                f"{ss['avg_ret']:.4f}", round(ss["net_per_100"], 2),
+                                f"{ss['avg_nonfill_ret']:.4f}"])
 
 
 # ── driver ───────────────────────────────────────────────────────────────

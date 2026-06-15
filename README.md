@@ -77,9 +77,20 @@ LOOKBACK_DAYS    = 365                     # calendar days of history to test
 RETURN_MULTIPLES = [1.0, 1.5, 2.0, 2.5]    # profit targets (× premium paid)
 ```
 
-Output: a per-ticker × entry-minute table of touch probabilities (plus an
-all-tickers-combined view), saved as a timestamped `.csv` (per-entry detail +
-summary) and `.txt` (full tables) under `thu_fri_results/`.
+Output: two tables per ticker (and an all-tickers-combined view), saved as a
+timestamped `.csv` (per-entry detail + summaries) and `.txt` (full tables)
+under `thu_fri_results/`:
+
+1. **TOUCH PROBABILITY** — for each entry minute, the chance the option's
+   expiry-day *high* reached each target (best-case; a resting limit would
+   fill on a touch).
+2. **STRATEGY P&L** — a realistic backtest of trading it: rest a limit at the
+   target; if it hasn't filled by **3:55 PM** on the expiry day, sell at
+   3:55 PM at the market. Each cell shows the **average net $ per $100 staked**
+   per trade and the **fill rate**, so you see the actual edge *including the
+   losing weeks*, not just the upside. A filled limit credits exactly the
+   target price (conservative on gap-ups); trading costs are not yet modelled
+   (clean-edge view).
 
 ## Data source
 
