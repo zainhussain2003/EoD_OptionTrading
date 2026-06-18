@@ -38,15 +38,15 @@ def is_mwf(d: date | None = None) -> bool:
     return d.weekday() in MWF
 
 
-def window_start_utc(d: date) -> datetime:
-    """3:00 PM ET as UTC datetime for date d."""
-    local = datetime(d.year, d.month, d.day, 15, 0, 0, tzinfo=ET)
+def window_start_utc(d: date, hour: int = 15) -> datetime:
+    """Window start (default 3:00 PM ET) as UTC datetime for date d."""
+    local = datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=ET)
     return local.astimezone(UTC)
 
 
-def window_end_utc(d: date) -> datetime:
-    """4:00 PM ET as UTC datetime for date d."""
-    local = datetime(d.year, d.month, d.day, 16, 0, 0, tzinfo=ET)
+def window_end_utc(d: date, hour: int = 16) -> datetime:
+    """Window end (default 4:00 PM ET) as UTC datetime for date d."""
+    local = datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=ET)
     return local.astimezone(UTC)
 
 
