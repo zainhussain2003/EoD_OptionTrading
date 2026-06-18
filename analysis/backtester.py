@@ -64,8 +64,8 @@ class Backtester:
             # MWF date itself; for a closed Friday it falls back to Thursday.
             exp_date = mwf_date
             real_only = False
-            win_start = window_start_utc(mwf_date)
-            win_end = window_end_utc(mwf_date)
+            win_start = window_start_utc(mwf_date, self.config.window_start_hour)
+            win_end = window_end_utc(mwf_date, self.config.window_end_hour)
 
             # Get stock bars for the 3-4 PM window to determine ATM strike
             stock_bars = self.fetcher.fetch_historical_stock_bars(
@@ -81,8 +81,8 @@ class Backtester:
             if ((stock_bars is None or stock_bars.empty)
                     and self.friday_thursday_fallback and mwf_date.weekday() == 4):
                 thu = mwf_date - timedelta(days=1)
-                t_start = window_start_utc(thu)
-                t_end = window_end_utc(thu)
+                t_start = window_start_utc(thu, self.config.window_start_hour)
+                t_end = window_end_utc(thu, self.config.window_end_hour)
                 thu_bars = self.fetcher.fetch_historical_stock_bars(
                     ticker, t_start, t_end, minutes=1)
                 if thu_bars is None or thu_bars.empty:
@@ -203,11 +203,13 @@ class Backtester:
 
     def _bars_to_minute_prices(self, bars: pd.DataFrame) -> dict[int, float]:
         """Convert bar DataFrame to {minute_of_day: close_price} using ET time."""
+        start_m = self.config.window_start_hour * 60
+        end_m = self.config.window_end_hour * 60
         prices = {}
         for ts, row in bars.iterrows():
             et_ts = pd.Timestamp(ts).tz_convert(ET)
             m = et_ts.hour * 60 + et_ts.minute
-            if 900 <= m < 960:  # 3:00 PM to 3:59 PM
+            if start_m <= m < end_m:  # within the configured window
                 prices[m] = float(row['close'])
         return prices
 
@@ -219,14 +221,18 @@ class Backtester:
 
         prices = {}
         r = self.config.risk_free_rate
+        start_m = self.config.window_start_hour * 60
+        end_m = self.config.window_end_hour * 60
 
         for ts, row in stock_bars.iterrows():
             et_ts = pd.Timestamp(ts).tz_convert(ET)
             m = et_ts.hour * 60 + et_ts.minute
-            if not (900 <= m < 960):
+            if not (start_m <= m < end_m):
                 continue
 
             spot = float(row['close'])
+            # Option expires at the 4 PM market close (0DTE), regardless of the
+            # trading window the user chose.
             close_et = datetime(expiry_date.year, expiry_date.month, expiry_date.day,
                                 16, 0, 0, tzinfo=ET)
             bar_et = et_ts.to_pydatetime()
@@ -242,9 +248,11 @@ class Backtester:
                              payoffs: dict, prefix: tuple) -> None:
         step = self.config.entry_step_minutes
         min_hold = self.config.min_hold_minutes
+        start_m = self.config.window_start_hour * 60
+        end_m = self.config.window_end_hour * 60
         sorted_minutes = sorted(minute_prices.keys())
 
-        for entry_m in range(900, 951, step):  # 3:00 to 3:50
+        for entry_m in range(start_m, end_m - min_hold, step):  # window start → last entry
             if entry_m not in minute_prices:
                 # Use nearest available bar
                 candidates = [m for m in sorted_minutes if abs(m - entry_m) <= step]
@@ -258,7 +266,7 @@ class Backtester:
             if premium <= 0:
                 continue
 
-            for exit_m in range(entry_m + min_hold, 960, step):  # entry+min_hold to 3:59
+            for exit_m in range(entry_m + min_hold, end_m, step):  # entry+min_hold → window end
                 if exit_m not in minute_prices:
                     candidates = [m for m in sorted_minutes if abs(m - exit_m) <= step and m > entry_m_actual]
                     if not candidates:
@@ -276,8 +284,8 @@ class Backtester:
                        n_dates: int) -> BacktestResult:
         all_pairs = []
         best_score = -float('inf')
-        best_entry = 900
-        best_exit = 955
+        best_entry = self.config.window_start_hour * 60
+        best_exit = self.config.window_end_hour * 60 - self.config.entry_step_minutes
 
         for (entry_m, exit_m), plist in payoffs.items():
             if len(plist) < 3:  # need at least 3 samples to be meaningful

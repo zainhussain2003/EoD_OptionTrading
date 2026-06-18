@@ -40,6 +40,12 @@ MIN_HOLD = 5
 MIN_SAMPLES = 3            # statistical floor: a pair needs >= 3 dates to count
 RESULTS_DIR = "backtest_results"
 
+# Trading window in minutes-of-day (default 3:00–4:00 PM ET = 900–960).
+# run_byday() overrides these from the caller's window_start_hour/end_hour so the
+# whole engine (stats grid, heatmaps) tracks the chosen window.
+WINDOW_START_M = 900
+WINDOW_END_M = 960
+
 
 # ── tiny ANSI helpers (no-op when output is piped to a file) ──────────────
 def _c(text, code):
@@ -49,6 +55,19 @@ def red(t):    return _c(t, "31")
 def yellow(t): return _c(t, "33")
 def bold(t):   return _c(t, "1")
 def cyan(t):   return _c(t, "36")
+
+
+def window_label(start_hour: int, end_hour: int) -> str:
+    """Human/file-friendly window tag, e.g. (15, 16) -> '3-4PM', (14, 15) -> '2-3PM'."""
+    def h12(h):
+        period = "AM" if h < 12 else "PM"
+        hh = h % 12
+        if hh == 0:
+            hh = 12
+        return hh, period
+    sh, sp = h12(start_hour)
+    eh, ep = h12(end_hour)
+    return f"{sh}-{eh}{ep}" if sp == ep else f"{sh}{sp}-{eh}{ep}"
 
 
 def get_fetcher():
@@ -114,12 +133,12 @@ def compute_pair_stats(reps: dict, size_fn=None, outlier_max=None) -> dict:
     """
     payoffs = defaultdict(list)
     for d, prices in reps.items():
-        for entry_m in range(900, 951, ENTRY_STEP):           # 3:00 → 3:50
+        for entry_m in range(WINDOW_START_M, WINDOW_END_M - MIN_HOLD, ENTRY_STEP):
             ep, em = price_at(prices, entry_m)
             if ep is None or ep <= 0:
                 continue
             qty = size_fn(ep) if size_fn else 1
-            for exit_m in range(entry_m + MIN_HOLD, 960, ENTRY_STEP):  # … → 3:59
+            for exit_m in range(entry_m + MIN_HOLD, WINDOW_END_M, ENTRY_STEP):
                 xp, _ = price_at(prices, exit_m, after=em)
                 if xp is None:
                     continue
@@ -228,8 +247,8 @@ def summarize(rows: list) -> dict:
 # ── Heatmaps ───────────────────────────────────────────────────────────────
 def _print_grid(title, stats, value_fn, color_fn, cell_w, optimal_key):
     """Generic entry↓ × exit→ grid. Cells via value_fn(stat); colored by color_fn."""
-    entries = list(range(900, 951, ENTRY_STEP))   # 3:00 … 3:50
-    exits   = list(range(905, 960, ENTRY_STEP))   # 3:05 … 3:55
+    entries = list(range(WINDOW_START_M, WINDOW_END_M - MIN_HOLD, ENTRY_STEP))
+    exits   = list(range(WINDOW_START_M + MIN_HOLD, WINDOW_END_M, ENTRY_STEP))
 
     print(f"  {title}")
     header = f"  {'Entry':>7} |"
@@ -579,7 +598,7 @@ def _outlier_removed_entry(ticker, dr, score_key, eligible, size_fn, outlier_max
 
 
 def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
-                    source_label, lookback_days, path, sized=False):
+                    source_label, lookback_days, path, sized=False, win_tag=None):
     """CSV output for the by-day backtest.
 
     sized — when True, the detail and summary sections gain position-sizing
@@ -592,6 +611,8 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
         if header_extra:
             w.writerow([f"# {header_extra}"])
         w.writerow([f"# Lookback = {lookback_days} calendar days"])
+        if win_tag:
+            w.writerow([f"# Trading window = {win_tag} ET"])
         w.writerow([f"# Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  "
                     f"data source: {source_label}"])
         w.writerow([f"# P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares"])
@@ -668,9 +689,14 @@ def _save_byday_csv(method_label, header_extra, day_data, tickers, days, combos,
 
 def run_byday(lookback_days, method_label, score_key, eligible,
               file_tag, header_extra="", days=None, combos=None, size_fn=None,
-              outlier_max=None, friday_thursday_fallback=False):
+              outlier_max=None, friday_thursday_fallback=False,
+              window_start_hour=15, window_end_hour=16):
     """Day-of-week driver: finds a separate optimal (entry, exit) per weekday.
 
+    window_start_hour / window_end_hour — the trading window to test, in 24h ET
+              (default 15→16 = 3–4 PM). e.g. 14, 16 = 2–4 PM; 14, 15 = 2–3 PM.
+              The whole engine (entry/exit grid, heatmaps, optimizer) and the
+              saved file names track this window.
     days    — list of (day_name, weekday_int); defaults to Mon/Wed/Fri.
     combos  — list of (label, [day_name, ...]) bundles for the comparison table;
               defaults to all 7 Mon/Wed/Fri combinations.
@@ -688,11 +714,16 @@ def run_byday(lookback_days, method_label, score_key, eligible,
               option moves to Thursday); never simulated. Default False.
     The combo table is printed per equity and then for all tickers combined.
     """
-    global LOOKBACK_DAYS
+    global LOOKBACK_DAYS, WINDOW_START_M, WINDOW_END_M
     LOOKBACK_DAYS = lookback_days
+    WINDOW_START_M = window_start_hour * 60
+    WINDOW_END_M = window_end_hour * 60
+    win_tag = window_label(window_start_hour, window_end_hour)
 
     config = Config()
     config.backtest_days = lookback_days
+    config.window_start_hour = window_start_hour
+    config.window_end_hour = window_end_hour
 
     DAYS = days if days is not None else [
         ("Monday", 0), ("Wednesday", 2), ("Friday", 4)]
@@ -715,6 +746,7 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     print(bold("\n" + "═" * 78))
     print(bold(f"  BACKTEST {scope}  —  {method_label}"))
     print(bold(f"  Lookback window: {lookback_days} calendar days"))
+    print(bold(f"  Trading window : {win_tag} ET"))
     if header_extra:
         print(f"  {header_extra}")
     print(bold("═" * 78))
@@ -852,16 +884,17 @@ def run_byday(lookback_days, method_label, score_key, eligible,
     # ── Save files ─────────────────────────────────────────────────────────
     os.makedirs(RESULTS_DIR, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
-    base = f"backtest_{file_tag}_{lookback_days}days_{stamp}"
+    base = f"backtest_{file_tag}_{win_tag}_{lookback_days}days_{stamp}"
     csv_path = os.path.join(RESULTS_DIR, f"{base}.csv")
     txt_path = os.path.join(RESULTS_DIR, f"{base}.txt")
 
     _save_byday_csv(method_label, header_extra, day_data, config.tickers,
                     DAYS, COMBOS, source_label, lookback_days, csv_path,
-                    sized=(size_fn is not None))
+                    sized=(size_fn is not None), win_tag=win_tag)
 
     hdr = (f"BACKTEST BY DAY — {method_label}\n"
            f"Lookback = {lookback_days} calendar days\n"
+           f"Trading window = {win_tag} ET\n"
            f"Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  {source_label}\n"
            f"P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares\n"
            + "=" * 78 + "\n\n")
@@ -883,6 +916,7 @@ def run_byday(lookback_days, method_label, score_key, eligible,
             f"trades (dollar P&L > ${outlier_max:,.0f}) removed, then the optimal\n"
             f"schedule is re-picked.\n"
             f"Lookback = {lookback_days} calendar days\n"
+            f"Trading window = {win_tag} ET\n"
             f"Generated {datetime.now():%Y-%m-%d %H:%M:%S}  |  {source_label}\n"
             f"P&L $ assumes 1 contract = {CONTRACT_MULTIPLIER} shares\n"
             + "=" * 78 + "\n\n")
