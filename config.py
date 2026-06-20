@@ -3,7 +3,9 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Config:
-    tickers: list = field(default_factory=lambda: ['AAPL', 'NVDA', 'TSLA', 'MSFT'])
+    # tickers: list = field(default_factory=lambda: ['AAPL', 'NVDA', 'TSLA', 'MSFT'])
+    tickers: list = field(default_factory=lambda: ['AAPL','TSLA'])
+
     risk_free_rate: float = 0.05
     backtest_days: int = 60
     entry_step_minutes: int = 5

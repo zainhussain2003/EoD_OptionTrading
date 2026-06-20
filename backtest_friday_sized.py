@@ -35,8 +35,8 @@ Saves two files to backtest_results/ (with contracts + cost columns):
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
-LOOKBACK_DAYS = 730          # <───── window to test (calendar days)
-WINDOW_START_HOUR = 15       # <───── trading window START hour, 24h ET (15=3PM, 14=2PM)
+LOOKBACK_DAYS = 365          # <───── window to test (calendar days)
+WINDOW_START_HOUR = 14       # <───── trading window START hour, 24h ET (15=3PM, 14=2PM)
 WINDOW_END_HOUR   = 16       # <───── trading window END   hour, 24h ET (16=4PM, 15=3PM)
 TARGET_SPEND  = 1.00         # <───── minimum premium per share per trade
 OUTLIER_MAX   = 2000         # <───── 2nd pass drops winning trades over $ this
