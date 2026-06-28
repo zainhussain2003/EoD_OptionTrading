@@ -67,12 +67,14 @@ def _drawdown_and_sharpe(pnls):
     return round(max_dd, 2), round(sharpe, 3)
 
 
-def _frame_summary(frame, summ):
+def _frame_summary(frame, summ, rows=None):
     from timeframe_engine import frame_label
+    data_source = _source_label(rows or [])
     if frame is None:
         return {"entry_frame": None, "exit_frame": None, "n_trades": 0,
                 "win_rate": 0.0, "total_pnl": 0.0, "avg_pnl": 0.0,
-                "return_on_spend": 0.0}
+                "best_day": 0.0, "worst_day": 0.0,
+                "return_on_spend": 0.0, "data_source": data_source}
     cost = summ.get("total_cost", 0.0)
     roi = (summ["total_pnl"] / cost) if cost else 0.0
     return {
@@ -86,16 +88,16 @@ def _frame_summary(frame, summ):
         "avg_pnl": round(summ["avg_pnl"], 2),
         "best_day": round(summ["best"], 2), "worst_day": round(summ["worst"], 2),
         "premium_spent": round(cost, 2), "return_on_spend": round(roi, 4),
+        "data_source": data_source,
     }
 
 
-def save_artifacts(out_dir, all_results):
-    """trades.csv (combined ledger) + equity_curve.png."""
+def _write_trades_csv(path, all_results, rows_getter):
+    """Write a per-Friday ledger CSV. rows_getter(res) selects which row set
+    (the normal pass or the outliers-removed pass) to write."""
     import csv
 
-    # Combined per-Friday ledger
-    with open(os.path.join(out_dir, "trades.csv"), "w", newline="",
-              encoding="utf-8") as f:
+    with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["date", "opt_type", "contract_symbol", "strike", "source",
                     "entry_frame", "entry_price", "exit_frame", "exit_price",
@@ -104,13 +106,31 @@ def save_artifacts(out_dir, all_results):
         for key, res in sorted(all_results.items(), key=lambda kv: kv[0][1]):
             if not res:
                 continue
-            for r in res["rows"]:
+            for r in rows_getter(res):
                 w.writerow([r["date"], r["opt_type"], r["contract_symbol"],
                             r["strike"], r["source"], r["entry_frame"],
                             r["entry_price"], r["exit_frame"], r["exit_price"],
                             r["payoff_per_share"], r["contracts"],
                             r["cost_dollars"], r["pnl_dollars"], r["profitable"],
                             r["note"]])
+
+
+def save_artifacts(out_dir, all_results, outlier_max=None):
+    """trades.csv (combined ledger) + trades_outliers_removed.csv + equity_curve.png.
+
+    trades_outliers_removed.csv mirrors trades.csv but uses the engine's
+    outliers-removed pass: each option type re-optimized with winning trades over
+    `outlier_max` dropped (same logic that produces the *_outliers_removed.txt files).
+    """
+    # Combined per-Friday ledger (normal pass — with outliers)
+    _write_trades_csv(os.path.join(out_dir, "trades.csv"), all_results,
+                      lambda res: res.get("rows", []))
+
+    # Outliers-removed ledger (re-optimized pass with winning outliers dropped)
+    if outlier_max is not None:
+        _write_trades_csv(
+            os.path.join(out_dir, "trades_outliers_removed.csv"), all_results,
+            lambda res: (res.get("excl") or {}).get("rows", []))
 
     # equity_curve.png — one cumulative line per option type (chart is optional).
     try:
@@ -147,31 +167,14 @@ def save_artifacts(out_dir, all_results):
         print(f"  [chart] skipped: {type(e).__name__}: {e}")
 
 
-def build_metrics(all_results, lookback_days, target_spend, outlier_max):
-    """Aggregate the per-option-type results into the contract metrics dict."""
-    all_rows = []
-    per_type = {}
-    for (ticker, opt_type), res in all_results.items():
-        rows = res["rows"] if res else []
-        all_rows.extend(rows)
-        key = "calls" if opt_type == "C" else "puts"
-        per_type[key] = _frame_summary(res["frame"] if res else None,
-                                       res["summ"] if res else {})
-
+def _aggregate(all_rows):
+    """Overall metrics over a flat list of per-day rows."""
     pnls = [r["pnl_dollars"] for r in all_rows if r["pnl_dollars"] != ""]
     n = len(pnls)
     wins = sum(1 for p in pnls if p > 0)
     total = sum(pnls)
     max_dd, sharpe = _drawdown_and_sharpe(pnls)
     return {
-        "status": "ok",
-        "strategy": "tsla-friday-timeframe",
-        "ticker": "TSLA",
-        "day": "Friday",
-        "session": "9:30 AM-4:00 PM ET",
-        "lookback_days": lookback_days,
-        "target_spend": target_spend,
-        "outlier_max": outlier_max,
         "n_trades": n,
         "win_rate": round(wins / n, 4) if n else 0.0,
         "total_pnl": round(total, 2),
@@ -181,9 +184,59 @@ def build_metrics(all_results, lookback_days, target_spend, outlier_max):
         "max_drawdown": max_dd,
         "sharpe": sharpe,
         "data_source": _source_label(all_rows),
-        "calls": per_type.get("calls"),
-        "puts": per_type.get("puts"),
     }
+
+
+def _pass_metrics(all_results, pass_key):
+    """Build the {overall + calls + puts} block for one pass.
+
+    pass_key=None  -> normal pass (with outliers): res["rows"]/["frame"]/["summ"]
+    pass_key="excl" -> outliers-removed pass:        res["excl"]["..."]
+    """
+    all_rows = []
+    per_type = {}
+    removed_dates = []
+    for (ticker, opt_type), res in all_results.items():
+        src = (res or {}) if pass_key is None else (res or {}).get("excl") or {}
+        rows = src.get("rows", []) if res else []
+        all_rows.extend(rows)
+        key = "calls" if opt_type == "C" else "puts"
+        per_type[key] = _frame_summary(src.get("frame") if res else None,
+                                       src.get("summ", {}) if res else {}, rows)
+        if pass_key == "excl" and res:
+            removed_dates.extend((res.get("excl") or {}).get("removed") or [])
+    block = _aggregate(all_rows)
+    block["calls"] = per_type.get("calls")
+    block["puts"] = per_type.get("puts")
+    if pass_key == "excl":
+        block["removed_dates"] = removed_dates
+    return block
+
+
+def build_metrics(all_results, lookback_days, target_spend, outlier_max):
+    """Aggregate the per-option-type results into the contract metrics dict.
+
+    Top-level fields cover the normal pass (with outliers); the nested
+    `outliers_removed` block carries the re-optimized, outliers-removed pass so
+    Oracle can render both 'With Outliers' and 'Without Outliers' sections.
+    """
+    normal = _pass_metrics(all_results, pass_key=None)
+    metrics = {
+        "status": "ok",
+        "strategy": "tsla-friday-timeframe",
+        "ticker": "TSLA",
+        "day": "Friday",
+        "session": "9:30 AM-4:00 PM ET",
+        "lookback_days": lookback_days,
+        "target_spend": target_spend,
+        "outlier_max": outlier_max,
+        **normal,
+    }
+    if outlier_max is not None:
+        excl = _pass_metrics(all_results, pass_key="excl")
+        excl["outlier_max"] = outlier_max
+        metrics["outliers_removed"] = excl
+    return metrics
 
 
 def print_summary(metrics):
@@ -250,7 +303,7 @@ def main() -> int:
         )
 
         metrics = build_metrics(all_results, LOOKBACK_DAYS, TARGET_SPEND, OUTLIER_MAX)
-        save_artifacts(out_dir, all_results)
+        save_artifacts(out_dir, all_results, OUTLIER_MAX)
         metrics["generated_at"] = datetime.now(dt_timezone.utc).isoformat()
         with open(os.path.join(out_dir, "metrics.json"), "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=2)

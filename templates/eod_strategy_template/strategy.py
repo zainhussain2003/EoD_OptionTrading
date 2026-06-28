@@ -242,9 +242,23 @@ def _avg_step(trades):
 # ───────────────────────────────────────────────────────────────────────────
 # SECTION 5 — OUTPUT (artifacts + summary block)
 # ───────────────────────────────────────────────────────────────────────────
-def save_artifacts(out_dir, trades, metrics, cfg: Config):
+def remove_outliers(trades, outlier_max):
+    """Drop winning trades whose dollar P&L exceeds outlier_max (mirrors the
+    repo's outliers-removed pass; the threshold is positive, so only fat-tail
+    wins are removed)."""
+    return [t for t in trades if t["pnl"] <= outlier_max]
+
+
+def save_artifacts(out_dir, trades, metrics, cfg: Config, trades_no_outliers=None):
     # trades.csv
-    pd.DataFrame(trades).to_csv(os.path.join(out_dir, "trades.csv"), index=False)
+    cols = list(trades[0].keys()) if trades else None
+    pd.DataFrame(trades, columns=cols).to_csv(
+        os.path.join(out_dir, "trades.csv"), index=False)
+
+    # trades_outliers_removed.csv — same structure, winning outliers (> outlier_max) dropped
+    if trades_no_outliers is not None:
+        pd.DataFrame(trades_no_outliers, columns=cols).to_csv(
+            os.path.join(out_dir, "trades_outliers_removed.csv"), index=False)
 
     # equity_curve.png
     try:
@@ -315,7 +329,16 @@ def main():
         all_trades.extend(trades)
 
     metrics = compute_metrics(all_trades, data_source, sigma_ann)
-    save_artifacts(out_dir, all_trades, metrics, cfg)
+    metrics["outlier_max"] = cfg.outlier_max
+
+    # Outliers-removed view: drop winning trades over the threshold, recompute.
+    trades_no_outliers = remove_outliers(all_trades, cfg.outlier_max)
+    excl = compute_metrics(trades_no_outliers, data_source, sigma_ann)
+    excl["outlier_max"] = cfg.outlier_max
+    excl["n_removed"] = len(all_trades) - len(trades_no_outliers)
+    metrics["outliers_removed"] = excl
+
+    save_artifacts(out_dir, all_trades, metrics, cfg, trades_no_outliers)
     print_summary(metrics)
     return 0
 

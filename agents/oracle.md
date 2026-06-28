@@ -17,7 +17,12 @@ Third step of `.github/workflows/run-strategy.yml`, after Forge, with
 
 ## Inputs
 
-- `results/<name>/metrics.json` — metrics or a `status:"error"` record.
+- `results/<name>/metrics.json` — metrics or a `status:"error"` record. On success
+  it carries the **with-outliers** numbers at the top level (plus `calls`/`puts`
+  objects) and a nested **`outliers_removed`** object with the same shape for the
+  without-outliers pass. The with-outliers data corresponds to the regular `.txt`
+  and `trades.csv` files; the without-outliers data corresponds to the
+  `_outliers_removed.txt` and `trades_outliers_removed.csv` files.
 - `results/<name>/run.log` — full stdout/stderr from the run.
 - `results/<name>/forge_status.json` — whether the strategy succeeded.
 
@@ -25,14 +30,32 @@ Third step of `.github/workflows/run-strategy.yml`, after Forge, with
 
 ### If the strategy SUCCEEDED (`metrics.status == "ok"`)
 
-Produce, in this order:
-1. A one-line verdict (e.g. "Profitable but thin sample").
-2. A **metrics table**: # trades, win rate, total P&L, avg/trade, max drawdown,
-   Sharpe, best/worst trade, data source.
-3. A short **interpretation** (3–6 sentences): Is the edge real or noise? Watch
-   the sample size, the data source (REAL vs SIMULATED), and the drawdown. Flag if
-   results came from simulated data (not tradeable conclusions).
-4. Pointers to `equity_curve.png` and `trades.csv`.
+Produce the body with these sections, **in this exact order**:
+
+1. `### Results (With Outliers)` — a metrics table broken out by **Calls** and
+   **Puts** (columns: `Metric | Calls | Puts`), with rows: **Trades, Win rate,
+   Total P&L, Avg P&L, Best trade, Worst trade, Best entry → exit, Data source**.
+   Built from the top-level metrics + the `calls`/`puts` objects.
+2. `### Results (Without Outliers)` — the SAME table, built from the
+   `outliers_removed` object (its `calls`/`puts`). If `outliers_removed` is
+   absent, say so in one line.
+3. `### Oracle's Verdict` — a short analysis paragraph (3–6 sentences): is the
+   edge real or noise? Compare the With vs Without Outliers totals to judge how
+   fat-tail-driven the result is; watch the sample size and the data source
+   (REAL vs SIMULATED — flag simulated data as not tradeable).
+
+Example of each section's table:
+
+| Metric | Calls | Puts |
+|---|---|---|
+| Trades | 102 | 100 |
+| Win rate | 42.2% | 27.0% |
+| Total P&L | $9,686 | $9,241 |
+| Best entry → exit | 9:40–9:45 → 1:45–1:52 | 3:06–3:11 → 3:55–4:00 |
+| Data source | Real Alpaca option bars | Real Alpaca option bars |
+
+For strategies with no calls/puts split, fall back to a single `Metric | Value`
+table per section.
 
 ### If the strategy FAILED (`metrics.status == "error"`)
 

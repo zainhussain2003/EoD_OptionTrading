@@ -21,6 +21,11 @@ class Config:
     dte: int = 7                        # days to expiry of the put we sell
     contracts: int = 1                  # contracts per trade (100 mult applied)
 
+    # Outlier threshold (dollars). The strategy emits a second "outliers removed"
+    # set of artifacts/metrics that drops winning trades whose P&L exceeds this,
+    # so a handful of fat-tail wins can't flatter the headline numbers.
+    outlier_max: float = 2000.0
+
     # --- Backtest window ----------------------------------------------------
     lookback_days: int = 365            # calendar days of history to test
     timezone: str = "America/New_York"

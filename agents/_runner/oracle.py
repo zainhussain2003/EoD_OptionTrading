@@ -62,34 +62,127 @@ Tail of run.log:
 
 Write the COMPLETE contents of results/{name}/summary.md in GitHub-flavored
 Markdown. Output ONLY the markdown (no preamble, no code fence around the whole
-thing). If the strategy succeeded, lead with a metrics table and a short
-interpretation. If it failed, lead with the error, a root-cause analysis, and a
+thing).
+
+If the strategy SUCCEEDED, structure the body with these exact sections, in order:
+
+### Results (With Outliers)
+A metrics table broken out by Calls and Puts (columns: Metric | Calls | Puts),
+with rows: Trades, Win rate, Total P&L, Avg P&L, Best trade, Worst trade,
+Best entry → exit, Data source. Use the top-level metrics + the `calls`/`puts`
+objects in metrics.json.
+
+### Results (Without Outliers)
+The SAME table, but built from the `outliers_removed` object in metrics.json
+(its `calls`/`puts`). If `outliers_removed` is absent, say so in one line.
+
+### Oracle's Verdict
+A short analysis paragraph: is the edge real or noise? Compare the With vs
+Without Outliers totals to judge how fat-tail-driven the result is, watch the
+sample size and the data source (flag SIMULATED data as not tradeable).
+
+If the strategy FAILED, lead with the error, a root-cause analysis, and a
 numbered list of concrete suggested fixes."""
+
+
+def _fmt_money(v) -> str:
+    return f"${v:,.0f}" if isinstance(v, (int, float)) else "—"
+
+
+def _fmt_pct(v) -> str:
+    return f"{v * 100:.1f}%" if isinstance(v, (int, float)) else "—"
+
+
+def _entry_exit(d) -> str:
+    ef, xf = d.get("entry_frame"), d.get("exit_frame")
+    return f"{ef} → {xf}" if ef and xf else "—"
+
+
+def _calls_puts_table(block) -> str:
+    """Calls/Puts metrics table for a single pass (with- or without-outliers)."""
+    calls = block.get("calls") or {}
+    puts = block.get("puts") or {}
+    default_src = block.get("data_source") or "—"
+    rows = [
+        ("Trades", calls.get("n_trades"), puts.get("n_trades")),
+        ("Win rate", _fmt_pct(calls.get("win_rate")), _fmt_pct(puts.get("win_rate"))),
+        ("Total P&L", _fmt_money(calls.get("total_pnl")), _fmt_money(puts.get("total_pnl"))),
+        ("Avg P&L", _fmt_money(calls.get("avg_pnl")), _fmt_money(puts.get("avg_pnl"))),
+        ("Best trade", _fmt_money(calls.get("best_day")), _fmt_money(puts.get("best_day"))),
+        ("Worst trade", _fmt_money(calls.get("worst_day")), _fmt_money(puts.get("worst_day"))),
+        ("Best entry → exit", _entry_exit(calls), _entry_exit(puts)),
+        ("Data source", calls.get("data_source") or default_src,
+                        puts.get("data_source") or default_src),
+    ]
+    body = "\n".join(
+        f"| {m} | {c if c is not None else '—'} | {p if p is not None else '—'} |"
+        for m, c, p in rows
+    )
+    return "| Metric | Calls | Puts |\n|---|---|---|\n" + body
+
+
+def _value_table(block) -> str:
+    """Single-column metrics table for strategies without a calls/puts split."""
+    rows = [
+        ("Trades", block.get("n_trades")),
+        ("Win rate", _fmt_pct(block.get("win_rate"))),
+        ("Total P&L", _fmt_money(block.get("total_pnl"))),
+        ("Avg P&L", _fmt_money(block.get("avg_pnl"))),
+        ("Best trade", _fmt_money(block.get("best_trade"))),
+        ("Worst trade", _fmt_money(block.get("worst_trade"))),
+        ("Max drawdown", _fmt_money(block.get("max_drawdown"))),
+        ("Sharpe", block.get("sharpe")),
+        ("Data source", block.get("data_source")),
+    ]
+    body = "\n".join(f"| {k} | {v} |" for k, v in rows if v is not None)
+    return "| Metric | Value |\n|---|---|\n" + body
+
+
+def _section(block) -> str:
+    """Render the right table for a metrics block (calls/puts if present)."""
+    if not block:
+        return "_No metrics available._"
+    if block.get("calls") or block.get("puts"):
+        return _calls_puts_table(block)
+    return _value_table(block)
+
+
+def _verdict(metrics) -> str:
+    wo = metrics.get("outliers_removed") or {}
+    total = metrics.get("total_pnl", 0) or 0
+    parts = [
+        f"The backtest produced {metrics.get('n_trades', 0)} trades with a "
+        f"{metrics.get('win_rate', 0) * 100:.1f}% win rate and {_fmt_money(total)} "
+        f"total P&L (with outliers)."
+    ]
+    if wo:
+        total_wo = wo.get("total_pnl", 0) or 0
+        parts.append(
+            f"With winning trades above {_fmt_money(metrics.get('outlier_max'))} removed, "
+            f"total P&L is {_fmt_money(total_wo)} ({wo.get('win_rate', 0) * 100:.1f}% win rate) "
+            f"— a {_fmt_money(total - total_wo)} swing, so weigh how much of the edge is "
+            f"fat-tail-driven before trusting it."
+        )
+    ds = (metrics.get("data_source") or "").upper()
+    if "SIM" in ds:
+        parts.append("Data is SIMULATED, not real option bars — treat this as a plumbing "
+                     "check, not a tradeable conclusion.")
+    parts.append("_(Deterministic summary — `claude` CLI was unavailable on the runner.)_")
+    return " ".join(parts)
 
 
 def deterministic_summary(name, metrics, runlog_tail, succeeded) -> str:
     if succeeded:
-        rows = [
-            ("Trades", metrics.get("n_trades")),
-            ("Win rate", f"{metrics.get('win_rate', 0) * 100:.1f}%"),
-            ("Total P&L", f"${metrics.get('total_pnl', 0):,.2f}"),
-            ("Avg / trade", f"${metrics.get('avg_pnl', 0):,.2f}"),
-            ("Max drawdown", f"${metrics.get('max_drawdown', 0):,.2f}"),
-            ("Sharpe", metrics.get("sharpe")),
-            ("Best trade", f"${metrics.get('best_trade', 0):,.2f}"),
-            ("Worst trade", f"${metrics.get('worst_trade', 0):,.2f}"),
-            ("Data source", metrics.get("data_source")),
-        ]
-        table = "| Metric | Value |\n|---|---|\n" + "\n".join(
-            f"| {k} | {v} |" for k, v in rows if v is not None
+        without = metrics.get("outliers_removed")
+        without_section = (
+            _section(without) if without else
+            "_This strategy did not emit an outliers-removed metrics set._"
         )
         return (f"# Oracle Summary — {name}\n\n"
-                f"**Result: SUCCESS**\n\n## Key metrics\n\n{table}\n\n"
-                f"## Interpretation\n\n"
-                f"The backtest completed and produced {metrics.get('n_trades', 0)} trades "
-                f"with a {metrics.get('win_rate', 0) * 100:.1f}% win rate. "
-                f"Review the equity curve (`equity_curve.png`) and `trades.csv` for detail. "
-                f"_(Deterministic summary — `claude` CLI was unavailable on the runner.)_\n")
+                f"**Result: SUCCESS**\n\n"
+                f"### Results (With Outliers)\n\n{_section(metrics)}\n\n"
+                f"### Results (Without Outliers)\n\n{without_section}\n\n"
+                f"### Oracle's Verdict\n\n{_verdict(metrics)}\n")
     error = metrics.get("error", "unknown error")
     tb = metrics.get("traceback", runlog_tail)
     return (f"# Oracle Summary — {name}\n\n"
