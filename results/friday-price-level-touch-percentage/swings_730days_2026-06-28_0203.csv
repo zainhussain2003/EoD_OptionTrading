@@ -1,3 +1,7 @@
+# Friday price-level-touch — per-Friday swing ledger
+# Lookback = 730 calendar days  |  data source: Alpaca Markets API
+# Generated 2026-06-28 02:03:55
+
 date,ticker,thu_ref_time,thu_ref_price,pct,threshold,up_level,down_level,fri_high,fri_low,max_up_swing_pct,max_down_swing_pct,max_up_swing,max_down_swing,touched_up,touched_down,touched_both,touched_neither
 2024-06-28,TSLA,3:50 PM,197.4,0.0100,1.974,199.374,195.426,203.115,195.28,0.028951,0.010740,5.715,2.12,True,True,True,False
 2024-06-28,TSLA,3:50 PM,197.4,0.0150,2.961,200.361,194.439,203.115,195.28,0.028951,0.010740,5.715,2.12,True,False,False,False

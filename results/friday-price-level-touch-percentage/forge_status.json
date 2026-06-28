@@ -1,8 +1,8 @@
 {
   "strategy": "friday-price-level-touch-percentage",
-  "started_at": "2026-06-28T05:21:14.847445+00:00",
+  "started_at": "2026-06-28T05:59:23.427860+00:00",
   "strategy_ok": true,
   "returncode": 0,
   "metrics_status": "ok",
-  "finished_at": "2026-06-28T05:25:48.904125+00:00"
+  "finished_at": "2026-06-28T06:04:01.835745+00:00"
 }
