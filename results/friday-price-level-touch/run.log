@@ -1,0 +1,222 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+
+══════════════════════════════════════════════════════════════════════════════════════
+  FRIDAY PRICE-LEVEL-TOUCH ANALYSIS
+  Lookback window: 730 calendar days
+  Friday scan    : 9:30 AM–4:00 PM ET, 1-minute bars
+  Thu baseline   : 3:50–3:55 PM ET (per-minute) + 3:50–55 average
+  Touch = Friday session high/low reaches Thursday ref ± per-ticker threshold; swings measured from each Thursday baseline.
+══════════════════════════════════════════════════════════════════════════════════════
+  Data source: Alpaca Markets API
+  Tickers / thresholds: TSLA ±$8   AAPL ±$6   NVDA ±$5   MSFT ±$10   ORCL ±$7
+
+  Analyzing TSLA (threshold ±$8.00)...
+  Analyzing AAPL (threshold ±$6.00)...
+  Analyzing NVDA (threshold ±$5.00)...
+  Analyzing MSFT (threshold ±$10.00)...
+  Analyzing ORCL (threshold ±$7.00)...
+
+██████████████████████████████████████████████████████████████████████████████████████
+══════════════════════════════════════════════════════════════════════════════════════
+  TSLA  —  level threshold ±$8.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays          +$8 hit          -$8 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101       50 (49.5%)       37 (36.6%)        7 (6.9%)      21 (20.8%)  
+      3:51 PM      101       51 (50.5%)       37 (36.6%)        8 (7.9%)      21 (20.8%)  
+      3:52 PM      101       52 (51.5%)       37 (36.6%)        8 (7.9%)      20 (19.8%) ◀
+      3:53 PM      100       51 (51.0%)       37 (37.0%)        7 (7.0%)      19 (19.0%)  
+      3:54 PM      101       50 (49.5%)       37 (36.6%)        5 (5.0%)      19 (18.8%)  
+      3:55 PM      101       50 (49.5%)       38 (37.6%)        6 (5.9%)      19 (18.8%)  
+  3:50–55 avg      101       51 (50.5%)       37 (36.6%)        7 (6.9%)      20 (19.8%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$8.84           -$6.36        +$31.55          -$30.11
+      3:51 PM          +$8.95           -$6.25        +$32.06          -$30.57
+      3:52 PM          +$8.96           -$6.25        +$31.85          -$31.39
+      3:53 PM          +$9.04           -$6.20        +$31.18          -$31.89
+      3:54 PM          +$8.95           -$6.25        +$32.12          -$31.91
+      3:55 PM          +$8.82           -$6.39        +$32.39          -$32.20
+  3:50–55 avg          +$8.91           -$6.29        +$31.82          -$31.34
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.235 ◀    3:53 PM $0.253    3:51 PM $0.342    3:54 PM $0.407    3:50 PM $0.409    3:55 PM $0.530
+  → Recommended Thursday reference for TSLA: 3:52 PM
+
+──────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\level_touch_tsla_730days_2026-06-28_0051.txt
+──────────────────────────────────────────────────────────────────────────────────────
+
+██████████████████████████████████████████████████████████████████████████████████████
+══════════════════════════════════════════════════════════════════════════════════════
+  AAPL  —  level threshold ±$6.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays          +$6 hit          -$6 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101       13 (12.9%)       11 (10.9%)        0 (0.0%)      77 (76.2%)  
+      3:51 PM      101       14 (13.9%)       11 (10.9%)        1 (1.0%)      77 (76.2%)  
+      3:52 PM      101       14 (13.9%)        10 (9.9%)        0 (0.0%)      77 (76.2%) ◀
+      3:53 PM      101       14 (13.9%)       11 (10.9%)        0 (0.0%)      76 (75.2%)  
+      3:54 PM      101       13 (12.9%)       13 (12.9%)        1 (1.0%)      76 (75.2%)  
+      3:55 PM      101       13 (12.9%)       12 (11.9%)        0 (0.0%)      76 (75.2%)  
+  3:50–55 avg      101       13 (12.9%)       11 (10.9%)        1 (1.0%)      78 (77.2%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$2.87           -$2.33        +$11.52          -$14.54
+      3:51 PM          +$2.89           -$2.31        +$12.27          -$14.99
+      3:52 PM          +$2.90           -$2.30        +$13.74          -$14.96
+      3:53 PM          +$2.90           -$2.29        +$13.65          -$15.05
+      3:54 PM          +$2.89           -$2.30        +$14.82          -$15.54
+      3:55 PM          +$2.89           -$2.31        +$15.90          -$16.30
+  3:50–55 avg          +$2.89           -$2.31        +$13.65          -$15.23
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.105 ◀    3:53 PM $0.114    3:51 PM $0.130    3:54 PM $0.185    3:50 PM $0.189    3:55 PM $0.239
+  → Recommended Thursday reference for AAPL: 3:52 PM
+
+──────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\level_touch_aapl_730days_2026-06-28_0051.txt
+──────────────────────────────────────────────────────────────────────────────────────
+
+██████████████████████████████████████████████████████████████████████████████████████
+══════════════════════════════════════════════════════════════════════════════════════
+  NVDA  —  level threshold ±$5.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays          +$5 hit          -$5 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101       14 (13.9%)       26 (25.7%)        0 (0.0%)      61 (60.4%)  
+      3:51 PM      101       14 (13.9%)       25 (24.8%)        0 (0.0%)      62 (61.4%)  
+      3:52 PM      101       14 (13.9%)       25 (24.8%)        0 (0.0%)      62 (61.4%) ◀
+      3:53 PM      101       15 (14.9%)       25 (24.8%)        1 (1.0%)      62 (61.4%)  
+      3:54 PM      101       15 (14.9%)       24 (23.8%)        1 (1.0%)      63 (62.4%)  
+      3:55 PM      101       13 (12.9%)       24 (23.8%)        0 (0.0%)      64 (63.4%)  
+  3:50–55 avg      101       14 (13.9%)       24 (23.8%)        0 (0.0%)      63 (62.4%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$2.24           -$2.70        +$15.35          -$14.92
+      3:51 PM          +$2.30           -$2.64        +$15.59          -$14.81
+      3:52 PM          +$2.27           -$2.68        +$15.73          -$14.77
+      3:53 PM          +$2.27           -$2.67        +$15.48          -$14.92
+      3:54 PM          +$2.25           -$2.69        +$15.21          -$14.95
+      3:55 PM          +$2.26           -$2.69        +$15.14          -$14.57
+  3:50–55 avg          +$2.27           -$2.68        +$15.42          -$14.82
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.083 ◀    3:53 PM $0.096    3:51 PM $0.108    3:50 PM $0.143    3:54 PM $0.151    3:55 PM $0.178
+  → Recommended Thursday reference for NVDA: 3:52 PM
+
+──────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\level_touch_nvda_730days_2026-06-28_0051.txt
+──────────────────────────────────────────────────────────────────────────────────────
+
+██████████████████████████████████████████████████████████████████████████████████████
+══════════════════════════════════════════════════════════════════════════════════════
+  MSFT  —  level threshold ±$10.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays         +$10 hit         -$10 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101         9 (8.9%)       13 (12.9%)        0 (0.0%)      79 (78.2%)  
+      3:51 PM      101        10 (9.9%)       13 (12.9%)        0 (0.0%)      78 (77.2%)  
+      3:52 PM      101         9 (8.9%)       13 (12.9%)        0 (0.0%)      79 (78.2%) ◀
+      3:53 PM      101        10 (9.9%)       13 (12.9%)        0 (0.0%)      78 (77.2%)  
+      3:54 PM      101        10 (9.9%)       14 (13.9%)        0 (0.0%)      77 (76.2%)  
+      3:55 PM      101        10 (9.9%)       13 (12.9%)        0 (0.0%)      78 (77.2%)  
+  3:50–55 avg      101        10 (9.9%)       13 (12.9%)        0 (0.0%)      78 (77.2%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$4.01           -$4.10        +$24.71          -$14.43
+      3:51 PM          +$4.10           -$4.01        +$24.88          -$14.46
+      3:52 PM          +$4.08           -$4.02        +$25.14          -$14.76
+      3:53 PM          +$4.11           -$4.00        +$24.72          -$14.72
+      3:54 PM          +$4.14           -$3.97        +$24.43          -$14.87
+      3:55 PM          +$4.14           -$3.97        +$24.06          -$14.87
+  3:50–55 avg          +$4.09           -$4.01        +$24.62          -$14.58
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.170 ◀    3:53 PM $0.196    3:51 PM $0.225    3:50 PM $0.296    3:54 PM $0.311    3:55 PM $0.427
+  → Recommended Thursday reference for MSFT: 3:52 PM
+
+──────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\level_touch_msft_730days_2026-06-28_0051.txt
+──────────────────────────────────────────────────────────────────────────────────────
+
+██████████████████████████████████████████████████████████████████████████████████████
+══════════════════════════════════════════════════════════════════════════════════════
+  ORCL  —  level threshold ±$7.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays          +$7 hit          -$7 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101       13 (12.9%)       16 (15.8%)        0 (0.0%)      72 (71.3%)  
+      3:51 PM       99       13 (13.1%)       16 (16.2%)        0 (0.0%)      70 (70.7%)  
+      3:52 PM      100       13 (13.0%)       17 (17.0%)        0 (0.0%)      70 (70.0%) ◀
+      3:53 PM      100       13 (13.0%)       17 (17.0%)        0 (0.0%)      70 (70.0%)  
+      3:54 PM      101       13 (12.9%)       17 (16.8%)        0 (0.0%)      71 (70.3%)  
+      3:55 PM      101       14 (13.9%)       17 (16.8%)        0 (0.0%)      70 (69.3%)  
+  3:50–55 avg      101       13 (12.9%)       17 (16.8%)        0 (0.0%)      71 (70.3%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$2.72           -$3.44        +$21.85          -$27.43
+      3:51 PM          +$2.71           -$3.49        +$22.43          -$27.95
+      3:52 PM          +$2.74           -$3.46        +$22.50          -$27.98
+      3:53 PM          +$2.76           -$3.44        +$22.67          -$28.00
+      3:54 PM          +$2.74           -$3.42        +$22.87          -$27.78
+      3:55 PM          +$2.76           -$3.40        +$22.83          -$26.95
+  3:50–55 avg          +$2.74           -$3.42        +$22.52          -$27.68
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.084 ◀    3:53 PM $0.090    3:51 PM $0.121    3:54 PM $0.126    3:55 PM $0.162    3:50 PM $0.174
+  → Recommended Thursday reference for ORCL: 3:52 PM
+
+──────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\level_touch_orcl_730days_2026-06-28_0051.txt
+──────────────────────────────────────────────────────────────────────────────────────
+
+██████████████████████████████████████████████████████████████████████████████████████
+  RECOMMENDED THURSDAY REFERENCE — by ticker (steadiest baseline)
+██████████████████████████████████████████████████████████████████████████████████████
+    TSLA : 3:52 PM   (avg deviation $0.235, 101 Fridays)
+    AAPL : 3:52 PM   (avg deviation $0.105, 101 Fridays)
+    NVDA : 3:52 PM   (avg deviation $0.083, 101 Fridays)
+    MSFT : 3:52 PM   (avg deviation $0.170, 101 Fridays)
+    ORCL : 3:52 PM   (avg deviation $0.084, 101 Fridays)
+
+  Saved CSV: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\touch_summary_730days_2026-06-28_0051.csv
+  Saved CSV: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\friday-price-level-touch\swings_730days_2026-06-28_0051.csv
+
+
+============================================================
+  STRATEGY SUMMARY — Friday price-level-touch
+============================================================
+  Data source : Alpaca Markets API
+  Lookback    : 730 days
+  Tickers     : TSLA, AAPL, NVDA, MSFT, ORCL
+    TSLA ±$8    : 101 Fridays   best ref 3:52 PM   +51% / -37% (both 8%, neither 20%)
+    AAPL ±$6    : 101 Fridays   best ref 3:52 PM   +14% / -10% (both 0%, neither 76%)
+    NVDA ±$5    : 101 Fridays   best ref 3:52 PM   +14% / -25% (both 0%, neither 61%)
+    MSFT ±$10   : 101 Fridays   best ref 3:52 PM   +9% / -13% (both 0%, neither 78%)
+    ORCL ±$7    : 101 Fridays   best ref 3:52 PM   +13% / -17% (both 0%, neither 70%)
+============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "friday-price-level-touch", "tickers": ["TSLA", "AAPL", "NVDA", "MSFT", "ORCL"], "thresholds": {"TSLA": 8.0, "AAPL": 6.0, "NVDA": 5.0, "MSFT": 10.0, "ORCL": 7.0}, "day": "Friday", "session": "9:30 AM-4:00 PM ET", "thursday_reference": "3:50-3:55 PM ET (per-minute) + 3:50-55 average", "lookback_days": 730, "bar_interval_minutes": 1, "target_spend": 1.0, "outlier_max": 2000.0, "data_source": "Alpaca Markets API", "total_fridays_analyzed": 505, "recommended_reference_by_ticker": {"TSLA": "3:52 PM", "AAPL": "3:52 PM", "NVDA": "3:52 PM", "MSFT": "3:52 PM", "ORCL": "3:52 PM"}, "tickers_detail": {"TSLA": {"threshold": 8.0, "n_fridays": 101, "n_skipped": 4, "n_baseline_substituted": 7, "recommended_reference": "3:52 PM", "recommended_reference_deviation": 0.235, "steadiness": {"3:50 PM": 0.4091, "3:51 PM": 0.342, "3:52 PM": 0.235, "3:53 PM": 0.2534, "3:54 PM": 0.4074, "3:55 PM": 0.5295}, "references": {"3:50 PM": {"fridays": 101, "up_hits": 50, "up_rate": 0.495, "down_hits": 37, "down_rate": 0.3663, "both_hits": 7, "both_rate": 0.0693, "neither_hits": 21, "neither_rate": 0.2079, "avg_up_swing": 8.844, "avg_down_swing": 6.3598, "max_up_swing": 31.55, "max_down_swing": 30.11}, "3:51 PM": {"fridays": 101, "up_hits": 51, "up_rate": 0.505, "down_hits": 37, "down_rate": 0.3663, "both_hits": 8, "both_rate": 0.0792, "neither_hits": 21, "neither_rate": 0.2079, "avg_up_swing": 8.9506, "avg_down_swing": 6.2532, "max_up_swing": 32.06, "max_down_swing": 30.57}, "3:52 PM": {"fridays": 101, "up_hits": 52, "up_rate": 0.5149, "down_hits": 37, "down_rate": 0.3663, "both_hits": 8, "both_rate": 0.0792, "neither_hits": 20, "neither_rate": 0.198, "avg_up_swing": 8.9577, "avg_down_swing": 6.2461, "max_up_swing": 31.85, "max_down_swing": 31.39}, "3:53 PM": {"fridays": 100, "up_hits": 51, "up_rate": 0.51, "down_hits": 37, "down_rate": 0.37, "both_hits": 7, "both_rate": 0.07, "neither_hits": 19, "neither_rate": 0.19, "avg_up_swing": 9.037, "avg_down_swing": 6.1981, "max_up_swing": 31.18, "max_down_swing": 31.89}, "3:54 PM": {"fridays": 101, "up_hits": 50, "up_rate": 0.495, "down_hits": 37, "down_rate": 0.3663, "both_hits": 5, "both_rate": 0.0495, "neither_hits": 19, "neither_rate": 0.1881, "avg_up_swing": 8.9515, "avg_down_swing": 6.2523, "max_up_swing": 32.12, "max_down_swing": 31.91}, "3:55 PM": {"fridays": 101, "up_hits": 50, "up_rate": 0.495, "down_hits": 38, "down_rate": 0.3762, "both_hits": 6, "both_rate": 0.0594, "neither_hits": 19, "neither_rate": 0.1881, "avg_up_swing": 8.8185, "avg_down_swing": 6.3853, "max_up_swing": 32.39, "max_down_swing": 32.2}, "3:50\u201355 avg": {"fridays": 101, "up_hits": 51, "up_rate": 0.505, "down_hits": 37, "down_rate": 0.3663, "both_hits": 7, "both_rate": 0.0693, "neither_hits": 20, "neither_rate": 0.198, "avg_up_swing": 8.9115, "avg_down_swing": 6.2923, "max_up_swing": 31.825, "max_down_swing": 31.345}}}, "AAPL": {"threshold": 6.0, "n_fridays": 101, "n_skipped": 4, "n_baseline_substituted": 7, "recommended_reference": "3:52 PM", "recommended_reference_deviation": 0.105, "steadiness": {"3:50 PM": 0.1891, "3:51 PM": 0.13, "3:52 PM": 0.105, "3:53 PM": 0.1141, "3:54 PM": 0.1846, "3:55 PM": 0.2392}, "references": {"3:50 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 11, "down_rate": 0.1089, "both_hits": 0, "both_rate": 0.0, "neither_hits": 77, "neither_rate": 0.7624, "avg_up_swing": 2.8656, "avg_down_swing": 2.3269, "max_up_swing": 11.52, "max_down_swing": 14.54}, "3:51 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 11, "down_rate": 0.1089, "both_hits": 1, "both_rate": 0.0099, "neither_hits": 77, "neither_rate": 0.7624, "avg_up_swing": 2.8858, "avg_down_swing": 2.3067, "max_up_swing": 12.27, "max_down_swing": 14.99}, "3:52 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 10, "down_rate": 0.099, "both_hits": 0, "both_rate": 0.0, "neither_hits": 77, "neither_rate": 0.7624, "avg_up_swing": 2.8957, "avg_down_swing": 2.2968, "max_up_swing": 13.74, "max_down_swing": 14.96}, "3:53 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 11, "down_rate": 0.1089, "both_hits": 0, "both_rate": 0.0, "neither_hits": 76, "neither_rate": 0.7525, "avg_up_swing": 2.8993, "avg_down_swing": 2.2932, "max_up_swing": 13.65, "max_down_swing": 15.055}, "3:54 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 13, "down_rate": 0.1287, "both_hits": 1, "both_rate": 0.0099, "neither_hits": 76, "neither_rate": 0.7525, "avg_up_swing": 2.888, "avg_down_swing": 2.3046, "max_up_swing": 14.825, "max_down_swing": 15.54}, "3:55 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 12, "down_rate": 0.1188, "both_hits": 0, "both_rate": 0.0, "neither_hits": 76, "neither_rate": 0.7525, "avg_up_swing": 2.8863, "avg_down_swing": 2.3062, "max_up_swing": 15.9, "max_down_swing": 16.295}, "3:50\u201355 avg": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 11, "down_rate": 0.1089, "both_hits": 1, "both_rate": 0.0099, "neither_hits": 78, "neither_rate": 0.7723, "avg_up_swing": 2.8868, "avg_down_swing": 2.3057, "max_up_swing": 13.6508, "max_down_swing": 15.23}}}, "NVDA": {"threshold": 5.0, "n_fridays": 101, "n_skipped": 4, "n_baseline_substituted": 7, "recommended_reference": "3:52 PM", "recommended_reference_deviation": 0.0825, "steadiness": {"3:50 PM": 0.1426, "3:51 PM": 0.1083, "3:52 PM": 0.0825, "3:53 PM": 0.0959, "3:54 PM": 0.1513, "3:55 PM": 0.1779}, "references": {"3:50 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 26, "down_rate": 0.2574, "both_hits": 0, "both_rate": 0.0, "neither_hits": 61, "neither_rate": 0.604, "avg_up_swing": 2.2404, "avg_down_swing": 2.7039, "max_up_swing": 15.35, "max_down_swing": 14.92}, "3:51 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 25, "down_rate": 0.2475, "both_hits": 0, "both_rate": 0.0, "neither_hits": 62, "neither_rate": 0.6139, "avg_up_swing": 2.3046, "avg_down_swing": 2.6397, "max_up_swing": 15.585, "max_down_swing": 14.81}, "3:52 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 25, "down_rate": 0.2475, "both_hits": 0, "both_rate": 0.0, "neither_hits": 62, "neither_rate": 0.6139, "avg_up_swing": 2.2654, "avg_down_swing": 2.6789, "max_up_swing": 15.735, "max_down_swing": 14.77}, "3:53 PM": {"fridays": 101, "up_hits": 15, "up_rate": 0.1485, "down_hits": 25, "down_rate": 0.2475, "both_hits": 1, "both_rate": 0.0099, "neither_hits": 62, "neither_rate": 0.6139, "avg_up_swing": 2.2699, "avg_down_swing": 2.6745, "max_up_swing": 15.48, "max_down_swing": 14.92}, "3:54 PM": {"fridays": 101, "up_hits": 15, "up_rate": 0.1485, "down_hits": 24, "down_rate": 0.2376, "both_hits": 1, "both_rate": 0.0099, "neither_hits": 63, "neither_rate": 0.6238, "avg_up_swing": 2.2546, "avg_down_swing": 2.6898, "max_up_swing": 15.21, "max_down_swing": 14.95}, "3:55 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 24, "down_rate": 0.2376, "both_hits": 0, "both_rate": 0.0, "neither_hits": 64, "neither_rate": 0.6337, "avg_up_swing": 2.2568, "avg_down_swing": 2.6875, "max_up_swing": 15.145, "max_down_swing": 14.575}, "3:50\u201355 avg": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 24, "down_rate": 0.2376, "both_hits": 0, "both_rate": 0.0, "neither_hits": 63, "neither_rate": 0.6238, "avg_up_swing": 2.2653, "avg_down_swing": 2.679, "max_up_swing": 15.4175, "max_down_swing": 14.8242}}}, "MSFT": {"threshold": 10.0, "n_fridays": 101, "n_skipped": 4, "n_baseline_substituted": 7, "recommended_reference": "3:52 PM", "recommended_reference_deviation": 0.17, "steadiness": {"3:50 PM": 0.296, "3:51 PM": 0.2252, "3:52 PM": 0.17, "3:53 PM": 0.1956, "3:54 PM": 0.3109, "3:55 PM": 0.4269}, "references": {"3:50 PM": {"fridays": 101, "up_hits": 9, "up_rate": 0.0891, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 79, "neither_rate": 0.7822, "avg_up_swing": 4.0061, "avg_down_swing": 4.1001, "max_up_swing": 24.715, "max_down_swing": 14.43}, "3:51 PM": {"fridays": 101, "up_hits": 10, "up_rate": 0.099, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 78, "neither_rate": 0.7723, "avg_up_swing": 4.0966, "avg_down_swing": 4.0096, "max_up_swing": 24.88, "max_down_swing": 14.46}, "3:52 PM": {"fridays": 101, "up_hits": 9, "up_rate": 0.0891, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 79, "neither_rate": 0.7822, "avg_up_swing": 4.0826, "avg_down_swing": 4.0237, "max_up_swing": 25.145, "max_down_swing": 14.755}, "3:53 PM": {"fridays": 101, "up_hits": 10, "up_rate": 0.099, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 78, "neither_rate": 0.7723, "avg_up_swing": 4.1054, "avg_down_swing": 4.0008, "max_up_swing": 24.72, "max_down_swing": 14.725}, "3:54 PM": {"fridays": 101, "up_hits": 10, "up_rate": 0.099, "down_hits": 14, "down_rate": 0.1386, "both_hits": 0, "both_rate": 0.0, "neither_hits": 77, "neither_rate": 0.7624, "avg_up_swing": 4.1358, "avg_down_swing": 3.9704, "max_up_swing": 24.43, "max_down_swing": 14.865}, "3:55 PM": {"fridays": 101, "up_hits": 10, "up_rate": 0.099, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 78, "neither_rate": 0.7723, "avg_up_swing": 4.14, "avg_down_swing": 3.9663, "max_up_swing": 24.06, "max_down_swing": 14.87}, "3:50\u201355 avg": {"fridays": 101, "up_hits": 10, "up_rate": 0.099, "down_hits": 13, "down_rate": 0.1287, "both_hits": 0, "both_rate": 0.0, "neither_hits": 78, "neither_rate": 0.7723, "avg_up_swing": 4.0944, "avg_down_swing": 4.0118, "max_up_swing": 24.6217, "max_down_swing": 14.5817}}}, "ORCL": {"threshold": 7.0, "n_fridays": 101, "n_skipped": 4, "n_baseline_substituted": 7, "recommended_reference": "3:52 PM", "recommended_reference_deviation": 0.0842, "steadiness": {"3:50 PM": 0.1742, "3:51 PM": 0.1208, "3:52 PM": 0.0842, "3:53 PM": 0.0902, "3:54 PM": 0.1259, "3:55 PM": 0.1621}, "references": {"3:50 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 16, "down_rate": 0.1584, "both_hits": 0, "both_rate": 0.0, "neither_hits": 72, "neither_rate": 0.7129, "avg_up_swing": 2.7204, "avg_down_swing": 3.4395, "max_up_swing": 21.85, "max_down_swing": 27.435}, "3:51 PM": {"fridays": 99, "up_hits": 13, "up_rate": 0.1313, "down_hits": 16, "down_rate": 0.1616, "both_hits": 0, "both_rate": 0.0, "neither_hits": 70, "neither_rate": 0.7071, "avg_up_swing": 2.7136, "avg_down_swing": 3.4929, "max_up_swing": 22.43, "max_down_swing": 27.95}, "3:52 PM": {"fridays": 100, "up_hits": 13, "up_rate": 0.13, "down_hits": 17, "down_rate": 0.17, "both_hits": 0, "both_rate": 0.0, "neither_hits": 70, "neither_rate": 0.7, "avg_up_swing": 2.7382, "avg_down_swing": 3.4587, "max_up_swing": 22.5, "max_down_swing": 27.98}, "3:53 PM": {"fridays": 100, "up_hits": 13, "up_rate": 0.13, "down_hits": 17, "down_rate": 0.17, "both_hits": 0, "both_rate": 0.0, "neither_hits": 70, "neither_rate": 0.7, "avg_up_swing": 2.7604, "avg_down_swing": 3.4383, "max_up_swing": 22.67, "max_down_swing": 28.0}, "3:54 PM": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 17, "down_rate": 0.1683, "both_hits": 0, "both_rate": 0.0, "neither_hits": 71, "neither_rate": 0.703, "avg_up_swing": 2.7422, "avg_down_swing": 3.4177, "max_up_swing": 22.87, "max_down_swing": 27.78}, "3:55 PM": {"fridays": 101, "up_hits": 14, "up_rate": 0.1386, "down_hits": 17, "down_rate": 0.1683, "both_hits": 0, "both_rate": 0.0, "neither_hits": 70, "neither_rate": 0.6931, "avg_up_swing": 2.7645, "avg_down_swing": 3.3954, "max_up_swing": 22.83, "max_down_swing": 26.95}, "3:50\u201355 avg": {"fridays": 101, "up_hits": 13, "up_rate": 0.1287, "down_hits": 17, "down_rate": 0.1683, "both_hits": 0, "both_rate": 0.0, "neither_hits": 71, "neither_rate": 0.703, "avg_up_swing": 2.7434, "avg_down_swing": 3.4165, "max_up_swing": 22.525, "max_down_swing": 27.6825}}}}, "generated_at": "2026-06-28T04:51:51.563113+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+
