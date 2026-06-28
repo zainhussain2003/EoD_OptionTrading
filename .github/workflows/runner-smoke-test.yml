@@ -1,0 +1,27 @@
+name: Runner Smoke Test
+
+# Manual sanity check that the self-hosted Windows runner is online and can run
+# Python + git + gh. Trigger from the GitHub Actions tab ("Run workflow").
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show runner + tool versions
+        shell: powershell
+        run: |
+          Write-Host "Hostname: $env:COMPUTERNAME"
+          python --version
+          git --version
+          gh --version
+          claude --version
+          Write-Host "Runner is alive and tools are available."
+
+      - name: Confirm Python deps import
+        shell: powershell
+        run: python -c "import pandas, numpy; print('pandas', pandas.__version__, '| numpy', numpy.__version__)"

@@ -1,0 +1,10 @@
+# Repo-level dependencies for the pipeline + strategy template.
+# A strategy dir may ship its own requirements.txt; Forge prefers that one and
+# falls back to this file.
+alpaca-py>=0.30.0
+yfinance>=0.2.40
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+python-dotenv>=1.0.0

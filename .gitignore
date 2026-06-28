@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets — never commit real keys
+.env
+**/.env
+
+# Local strategy run output (pipeline writes to results/<name>/, which IS committed)
+templates/**/output/

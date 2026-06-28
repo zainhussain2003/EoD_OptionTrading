@@ -1,0 +1,83 @@
+name: EoD Strategy Pipeline
+
+# Architect pushes a strategy/<name> branch from the phone -> this runs the
+# Sentinel -> Forge -> Oracle -> Herald pipeline on the self-hosted Windows
+# laptop and delivers results as a PR.
+
+on:
+  push:
+    branches:
+      - 'strategy/**'
+
+# Only one pipeline run per branch at a time; a newer push supersedes an older run.
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pipeline:
+    runs-on: self-hosted          # the Windows laptop runner
+    env:
+      # Strategy name = branch name minus the 'strategy/' prefix.
+      STRATEGY_NAME: ${{ github.ref_name }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+      # gh CLI auth for Herald (uses the runner's logged-in gh token).
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout (full history, this branch)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve strategy name
+        shell: powershell
+        run: |
+          $name = "${{ github.ref_name }}" -replace '^strategy/',''
+          "STRATEGY_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Strategy name: $name"
+
+      # ── Step 1: Sentinel (validate) ──────────────────────────────────────
+      - name: Sentinel — validate
+        id: sentinel
+        shell: powershell
+        run: python agents/_runner/sentinel.py "$env:STRATEGY_NAME"
+
+      # ── Step 2: Forge (run) ──────────────────────────────────────────────
+      # Only runs if Sentinel passed. Forge itself always exits 0.
+      - name: Forge — run strategy
+        id: forge
+        if: success()
+        shell: powershell
+        run: python agents/_runner/forge.py "$env:STRATEGY_NAME"
+
+      # ── Step 3: Oracle (analyze) ─────────────────────────────────────────
+      # Runs even if Sentinel/Forge failed, so we always get a summary.
+      - name: Oracle — analyze
+        id: oracle
+        if: always()
+        shell: powershell
+        run: python agents/_runner/oracle.py "$env:STRATEGY_NAME"
+
+      # ── Step 4: Herald (deliver PR) ──────────────────────────────────────
+      - name: Herald — deliver results
+        id: herald
+        if: always()
+        shell: powershell
+        run: python agents/_runner/herald.py "$env:STRATEGY_NAME"
+
+      - name: Pipeline status
+        if: always()
+        shell: powershell
+        run: |
+          Write-Host "Sentinel: ${{ steps.sentinel.outcome }}"
+          Write-Host "Forge:    ${{ steps.forge.outcome }}"
+          Write-Host "Oracle:   ${{ steps.oracle.outcome }}"
+          Write-Host "Herald:   ${{ steps.herald.outcome }}"
