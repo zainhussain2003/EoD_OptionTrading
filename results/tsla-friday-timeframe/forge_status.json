@@ -1,0 +1,8 @@
+{
+  "strategy": "tsla-friday-timeframe",
+  "started_at": "2026-06-28T03:32:38.622058+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-06-28T03:35:10.615097+00:00"
+}
