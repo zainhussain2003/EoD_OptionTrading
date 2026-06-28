@@ -690,6 +690,8 @@ def run_timeframe(lookback_days, method_label, score_key, eligible, size_fn,
     os.makedirs(RESULTS_DIR, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
 
+    all_results = {}   # {(ticker, opt_type): {frame, summ, rows, ranked, paths} | None}
+
     for ticker in config.tickers:
         for opt_type in config.option_types:
             records = backtester.daily_capture.get((ticker, opt_type), [])
@@ -701,6 +703,7 @@ def run_timeframe(lookback_days, method_label, score_key, eligible, size_fn,
             if len([r for r in records if r["source"] != SOURCE_NO_STOCK]) < MIN_SAMPLES:
                 print(red(f"  Not enough data captured for {ticker} "
                           f"{opt_word(opt_type)}s.\n"))
+                all_results[(ticker, opt_type)] = None
                 continue
 
             res = _analyze(opt_type, records, size_fn, score_key, eligible,
@@ -790,3 +793,11 @@ def run_timeframe(lookback_days, method_label, score_key, eligible, size_fn,
                 print(f"  {cyan('Saved TXT (outliers removed):')} {bold(excl_path)}")
             print(bold("─" * 86))
             print()
+
+            all_results[(ticker, opt_type)] = {
+                "frame": res["frame"], "summ": res["summ"], "rows": res["rows"],
+                "ranked": res["ranked"], "excl": res.get("excl"),
+                "csv_path": csv_path, "txt_path": txt_path, "excl_path": excl_path,
+            }
+
+    return all_results
