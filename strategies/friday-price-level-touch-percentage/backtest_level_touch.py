@@ -6,7 +6,7 @@ For a basket of tickers, each evaluated at several PERCENTAGE move thresholds,
 this study asks: starting from Thursday's near-close price R, how often does Friday
 TOUCH R × (1 ± pct), at any point between 9:30 AM and 4:00 PM ET?
 
-  Every ticker is tested at ±2%, ±2.5% and ±3% (edit config.py to change them).
+  Every ticker is tested at ±1%, ±1.5%, ±2%, ±2.5% and ±3% (edit config.py).
 
 Thursday's baseline is captured minute-by-minute at 3:50, 3:51, 3:52, 3:53, 3:54
 and 3:55 PM (plus a 3:50–55 average), so we can compare which near-close minute is
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         lookback_days=LOOKBACK_DAYS,
         header_extra=(
             f"Touch = Friday session high/low reaches Thursday ref × (1 ± pct) at "
-            f"each per-ticker percentage (2% / 2.5% / 3%). Swings shown as % of "
+            f"each per-ticker percentage (1% / 1.5% / 2% / 2.5% / 3%). Swings shown as % of "
             f"reference with the dollar move in brackets. "
             f"(TARGET_SPEND ${TARGET_SPEND:.2f} / OUTLIER_MAX ${OUTLIER_MAX:.0f} "
             f"carried as inert metadata.)"

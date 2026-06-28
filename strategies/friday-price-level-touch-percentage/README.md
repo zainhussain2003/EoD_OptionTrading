@@ -6,17 +6,17 @@ to **Thursday's near-close price**, at any point during the regular session
 (**9:30 AM–4:00 PM ET**).
 
 This is the **percentage** variant of `friday-price-level-touch`: instead of one
-fixed-dollar threshold per ticker, every ticker is tested at **±2%, ±2.5% and
-±3%** of the reference price, so the move is volatility-normalized and directly
-comparable across names.
+fixed-dollar threshold per ticker, every ticker is tested at **±1%, ±1.5%, ±2%,
+±2.5% and ±3%** of the reference price, so the move is volatility-normalized and
+directly comparable across names.
 
 | Ticker | Thresholds |
 |--------|------------|
-| TSLA   | ±2% · ±2.5% · ±3% |
-| AAPL   | ±2% · ±2.5% · ±3% |
-| NVDA   | ±2% · ±2.5% · ±3% |
-| MSFT   | ±2% · ±2.5% · ±3% |
-| ORCL   | ±2% · ±2.5% · ±3% |
+| TSLA   | ±1% · ±1.5% · ±2% · ±2.5% · ±3% |
+| AAPL   | ±1% · ±1.5% · ±2% · ±2.5% · ±3% |
+| NVDA   | ±1% · ±1.5% · ±2% · ±2.5% · ±3% |
+| MSFT   | ±1% · ±1.5% · ±2% · ±2.5% · ±3% |
+| ORCL   | ±1% · ±1.5% · ±2% · ±2.5% · ±3% |
 
 Each ticker's percentage list is independently editable in `config.py`
 (`ticker_pcts`). This is a **stock price-level** study — there are **no options
@@ -35,7 +35,7 @@ analysis is a level-touch / swing count, not an option backtest.
 - **Friday scan.** Every 1-minute bar from 9:30 AM to 4:00 PM is fetched; the
   session **high** (max of bar highs) and **low** (min of bar lows) are taken.
 - **Touch detection (intraday high/low).** For each Thursday reference price `R`
-  and each percentage `pct` (2%, 2.5%, 3%):
+  and each percentage `pct` (1%, 1.5%, 2%, 2.5%, 3%):
   - `touched_up`   = Friday session high `≥ R × (1 + pct)`
   - `touched_down` = Friday session low  `≤ R × (1 − pct)`
 
@@ -46,7 +46,7 @@ analysis is a level-touch / swing count, not an option backtest.
   **max-down swing** (`R − fri_low`) — the biggest move each way that day — are
   recorded from each baseline, reported as a **percentage of `R` with the dollar
   move in brackets** (e.g. `+2.34% ($8.96)`). The swing distance is the same for
-  all three thresholds (it doesn't depend on `pct`), so it is shown once per
+  all five thresholds (it doesn't depend on `pct`), so it is shown once per
   ticker.
 - **Steadiest baseline.** Each single reference minute is ranked by its **average
   absolute deviation from the per-Friday 3:50–55 mean** (lower = steadier). The
@@ -85,7 +85,7 @@ Friday scan window.
 
 For each ticker (printed in a bold-bordered block and saved to a `.txt`):
 
-- **Hit-rate sub-tables — one per percentage (2%, 2.5%, 3%)** — per reference
+- **Hit-rate sub-tables — one per percentage (1%, 1.5%, 2%, 2.5%, 3%)** — per reference
   time: Fridays analyzed, +pct hits, −pct hits, both, neither (with percentages).
 - **Swing table** (shown once per ticker, since swings don't depend on the
   threshold) — per reference time: average and largest max-up / max-down swing

@@ -8,13 +8,13 @@ class Config:
     # R, how often does Friday touch (R × (1 ± pct))? Each ticker is evaluated at
     # several percentage levels so the move is volatility-normalized and directly
     # comparable across names (unlike the earlier fixed-dollar thresholds).
-    # Each list is independently editable; the default is 2%, 2.5% and 3%.
+    # Each list is independently editable; the default is 1%, 1.5%, 2%, 2.5% and 3%.
     ticker_pcts: dict = field(default_factory=lambda: {
-        'TSLA': [0.02, 0.025, 0.03],
-        'AAPL': [0.02, 0.025, 0.03],
-        'NVDA': [0.02, 0.025, 0.03],
-        'MSFT': [0.02, 0.025, 0.03],
-        'ORCL': [0.02, 0.025, 0.03],
+        'TSLA': [0.01, 0.015, 0.02, 0.025, 0.03],
+        'AAPL': [0.01, 0.015, 0.02, 0.025, 0.03],
+        'NVDA': [0.01, 0.015, 0.02, 0.025, 0.03],
+        'MSFT': [0.01, 0.015, 0.02, 0.025, 0.03],
+        'ORCL': [0.01, 0.015, 0.02, 0.025, 0.03],
     })
 
     backtest_days: int = 730           # lookback window (calendar days)

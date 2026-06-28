@@ -163,7 +163,7 @@ def save_artifacts(out_dir, all_results):
                             r.touched_neither])
 
     # hit_rates.png — +/- touch rate per reference, one row per ticker and one
-    # column per percentage threshold (2% / 2.5% / 3%).
+    # column per percentage threshold (1% / 1.5% / 2% / 2.5% / 3%).
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -262,7 +262,7 @@ def main() -> int:
             lookback_days=LOOKBACK_DAYS,
             header_extra=(
                 "Touch = Friday session high/low reaches Thursday ref × (1 ± pct) "
-                "at 2% / 2.5% / 3%; swings shown as % of reference ($ in brackets)."
+                "at 1% / 1.5% / 2% / 2.5% / 3%; swings shown as % of reference ($ in brackets)."
             ),
         )
 
