@@ -1,0 +1,8 @@
+{
+  "strategy": "smoke-test",
+  "started_at": "2026-06-28T02:28:13.950036+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-06-28T02:28:18.312509+00:00"
+}

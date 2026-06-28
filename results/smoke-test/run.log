@@ -1,0 +1,25 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+  [data] Alpaca fetch failed (APIError: {"message":"subscription does not permit querying recent SIP data"}
+); using simulation.
+  Loaded 365 bars for SPY — SIMULATED (no Alpaca keys / fetch failed)
+
+============================================================
+  STRATEGY SUMMARY
+============================================================
+  Data source : SIMULATED (no Alpaca keys / fetch failed)
+  Trades      : 52
+  Win rate    : 44.2%
+  Total P&L   : $39.17
+  Avg / trade : $0.75
+  Max drawdown: $-181.94
+  Sharpe      : 0.209
+============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "n_trades": 52, "win_rate": 0.4423, "total_pnl": 39.17, "avg_pnl": 0.75, "max_drawdown": -181.94, "sharpe": 0.209, "best_trade": 14.02, "worst_trade": -131.14, "data_source": "SIMULATED (no Alpaca keys / fetch failed)", "sigma_annualized": 0.1871}
+===END_SUMMARY===
+
+=== strategy stderr ===
+

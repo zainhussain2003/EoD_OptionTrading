@@ -1,0 +1,30 @@
+{
+  "status": "ok",
+  "n_trades": 52,
+  "win_rate": 0.4423,
+  "total_pnl": 39.17,
+  "avg_pnl": 0.75,
+  "max_drawdown": -181.94,
+  "sharpe": 0.209,
+  "best_trade": 14.02,
+  "worst_trade": -131.14,
+  "data_source": "SIMULATED (no Alpaca keys / fetch failed)",
+  "sigma_annualized": 0.1871,
+  "config": {
+    "tickers": [
+      "SPY"
+    ],
+    "target_delta": 0.05,
+    "otm_pct_fallback": 0.05,
+    "dte": 7,
+    "contracts": 1,
+    "lookback_days": 365,
+    "timezone": "America/New_York",
+    "entry_hour": 15,
+    "entry_minute": 55,
+    "risk_free_rate": 0.05,
+    "contract_multiplier": 100,
+    "alpaca_paper": true
+  },
+  "generated_at": "2026-06-28T02:28:18.136230+00:00"
+}
