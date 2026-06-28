@@ -82,6 +82,10 @@ Sentinel enforces this; Forge, Oracle, and Herald consume it.
 
 - **Branch:** `strategy/<name>`  ·  **Strategy dir:** `strategies/<name>/`  ·
   **Results dir:** `results/<name>/`. The `<name>` is identical across all three.
+- **CRITICAL:** Always use `strategy/<name>` as the branch name. Do **NOT** use the
+  default `claude/` prefix. The entire pipeline depends on this naming convention —
+  the `run-strategy.yml` workflow only triggers on `strategy/**` branches, so a
+  `claude/` branch silently runs nothing.
 - **`<name>`** is lowercase, hyphen-separated, descriptive
   (e.g. `spy-weekly-5delta-puts`).
 - **Python:** use `python` (not `python3`) — this repo targets **Windows**.
