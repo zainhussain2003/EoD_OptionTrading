@@ -1,0 +1,8 @@
+{
+  "strategy": "weekly-move-probability",
+  "started_at": "2026-06-28T19:15:41.546076+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-06-28T19:17:54.495707+00:00"
+}

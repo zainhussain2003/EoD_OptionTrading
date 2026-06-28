@@ -1,0 +1,147 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+
+════════════════════════════════════════════════════════════════════════════════════════════
+  WEEKLY MOVE PROBABILITY ANALYSIS
+  Lookback window : 730 calendar days
+  Band            : ±1.50% (up / down / flat)
+  Reference       : avg of 3:50–4:00 PM ET minute closes (Thursday fallback on Friday holidays)
+  Measurement     : terminal Friday→next-Friday close-to-close
+  Bucket: up if weekly return >= +threshold, down if <= -threshold, else flat. Reference = average of 3:50-4:00 PM ET minute closes.
+════════════════════════════════════════════════════════════════════════════════════════════
+  Data source: Alpaca Markets API
+  Tickers: TSLA, AAPL, NVDA, ORCL, MSFT
+
+  Analyzing TSLA (±1.50% band)...
+  Analyzing AAPL (±1.50% band)...
+  Analyzing NVDA (±1.50% band)...
+  Analyzing ORCL (±1.50% band)...
+  Analyzing MSFT (±1.50% band)...
+
+████████████████████████████████████████████████████████████████████████████████████████████
+════════════════════════════════════════════════════════════════════════════════════════════
+  TSLA  —  Friday→next-Friday weekly move, ±1.50% band
+════════════════════════════════════════════════════════════════════════════════════════════
+  Weeks analyzed: 104   dropped (no data): 0   (12 week(s) used a Thursday/earlier fallback leg)
+
+  Probabilities (terminal, close-to-close):
+    P(up   >= +1.50%) : 37.50%   (39/104)
+    P(down <= -1.50%) : 42.31%   (44/104)
+    P(within +/-1.50%) : 20.19%   (21/104)
+
+  Weekly return stats:
+    mean +0.918%   median -0.851%   stdev 7.751%   min -14.94%   max +28.96%
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_move_tsla_730days_2026-06-28_1517.txt
+────────────────────────────────────────────────────────────────────────────────────────────
+
+████████████████████████████████████████████████████████████████████████████████████████████
+════════════════════════════════════════════════════════════════════════════════════════════
+  AAPL  —  Friday→next-Friday weekly move, ±1.50% band
+════════════════════════════════════════════════════════════════════════════════════════════
+  Weeks analyzed: 104   dropped (no data): 0   (12 week(s) used a Thursday/earlier fallback leg)
+
+  Probabilities (terminal, close-to-close):
+    P(up   >= +1.50%) : 40.38%   (42/104)
+    P(down <= -1.50%) : 28.85%   (30/104)
+    P(within +/-1.50%) : 30.77%   (32/104)
+
+  Weekly return stats:
+    mean +0.359%   median +0.528%   stdev 3.852%   min -13.43%   max +13.30%
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_move_aapl_730days_2026-06-28_1517.txt
+────────────────────────────────────────────────────────────────────────────────────────────
+
+████████████████████████████████████████████████████████████████████████████████████████████
+════════════════════════════════════════════════════════════════════════════════════════════
+  NVDA  —  Friday→next-Friday weekly move, ±1.50% band
+════════════════════════════════════════════════════════════════════════════════════════════
+  Weeks analyzed: 104   dropped (no data): 0   (12 week(s) used a Thursday/earlier fallback leg)
+
+  Probabilities (terminal, close-to-close):
+    P(up   >= +1.50%) : 42.31%   (44/104)
+    P(down <= -1.50%) : 35.58%   (37/104)
+    P(within +/-1.50%) : 22.12%   (23/104)
+
+  Weekly return stats:
+    mean +0.615%   median +0.623%   stdev 6.132%   min -15.70%   max +18.87%
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_move_nvda_730days_2026-06-28_1517.txt
+────────────────────────────────────────────────────────────────────────────────────────────
+
+████████████████████████████████████████████████████████████████████████████████████████████
+════════════════════════════════════════════════════════════════════════════════════════════
+  ORCL  —  Friday→next-Friday weekly move, ±1.50% band
+════════════════════════════════════════════════════════════════════════════════════════════
+  Weeks analyzed: 104   dropped (no data): 0   (12 week(s) used a Thursday/earlier fallback leg)
+
+  Probabilities (terminal, close-to-close):
+    P(up   >= +1.50%) : 37.50%   (39/104)
+    P(down <= -1.50%) : 39.42%   (41/104)
+    P(within +/-1.50%) : 23.08%   (24/104)
+
+  Weekly return stats:
+    mean +0.329%   median -0.364%   stdev 7.558%   min -19.18%   max +27.06%
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_move_orcl_730days_2026-06-28_1517.txt
+────────────────────────────────────────────────────────────────────────────────────────────
+
+████████████████████████████████████████████████████████████████████████████████████████████
+════════════════════════════════════════════════════════════════════════════════════════════
+  MSFT  —  Friday→next-Friday weekly move, ±1.50% band
+════════════════════════════════════════════════════════════════════════════════════════════
+  Weeks analyzed: 104   dropped (no data): 0   (12 week(s) used a Thursday/earlier fallback leg)
+
+  Probabilities (terminal, close-to-close):
+    P(up   >= +1.50%) : 26.92%   (28/104)
+    P(down <= -1.50%) : 29.81%   (31/104)
+    P(within +/-1.50%) : 43.27%   (45/104)
+
+  Weekly return stats:
+    mean -0.111%   median -0.223%   stdev 3.589%   min -8.10%   max +13.95%
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_move_msft_730days_2026-06-28_1517.txt
+────────────────────────────────────────────────────────────────────────────────────────────
+
+████████████████████████████████████████████████████████████████████████████████████████████
+  SUMMARY — weekly move probability by ticker (and pooled)
+████████████████████████████████████████████████████████████████████████████████████████████
+      TSLA: 104 wks   up  39 (37.5%)   down  44 (42.3%)   flat  21 (20.2%)   | mean +0.918%  med -0.851%  sd 7.751%
+      AAPL: 104 wks   up  42 (40.4%)   down  30 (28.8%)   flat  32 (30.8%)   | mean +0.359%  med +0.528%  sd 3.852%
+      NVDA: 104 wks   up  44 (42.3%)   down  37 (35.6%)   flat  23 (22.1%)   | mean +0.615%  med +0.623%  sd 6.132%
+      ORCL: 104 wks   up  39 (37.5%)   down  41 (39.4%)   flat  24 (23.1%)   | mean +0.329%  med -0.364%  sd 7.558%
+      MSFT: 104 wks   up  28 (26.9%)   down  31 (29.8%)   flat  45 (43.3%)   | mean -0.111%  med -0.223%  sd 3.589%
+  ----------------------------------------------------------------------------------------
+    POOLED: 520 wks   up 192 (36.9%)   down 183 (35.2%)   flat 145 (27.9%)   | mean +0.422%  med -0.039%  sd 6.051%
+
+  Saved CSV: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\probability_summary_730days_2026-06-28_1517.csv
+  Saved CSV: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\weekly-move-probability\weekly_log_730days_2026-06-28_1517.csv
+
+
+============================================================
+  STRATEGY SUMMARY — weekly move probability
+============================================================
+  Data source : Alpaca Markets API
+  Lookback    : 730 days
+  Band        : +/-1.50%
+  Tickers     : TSLA, AAPL, NVDA, ORCL, MSFT
+    TSLA: 104 wks   up 38%  down 42%  flat 20%
+    AAPL: 104 wks   up 40%  down 29%  flat 31%
+    NVDA: 104 wks   up 42%  down 36%  flat 22%
+    ORCL: 104 wks   up 38%  down 39%  flat 23%
+    MSFT: 104 wks   up 27%  down 30%  flat 43%
+  POOLED: 520 wks   up 37%  down 35%  flat 28%
+============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "weekly-move-probability", "measurement": "terminal (Friday close-to-next-Friday close)", "tickers": ["TSLA", "AAPL", "NVDA", "ORCL", "MSFT"], "threshold": 0.015, "reference_window": "3:50-4:00 PM ET (average of minute closes)", "holiday_rule": "fall back to prior Thursday (then Wed...) on a Friday holiday", "lookback_days": 730, "bar_interval_minutes": 1, "data_source": "Alpaca Markets API", "total_weeks_analyzed": 520, "pooled": {"weeks": 520, "up": 192, "p_up": 0.3692, "down": 183, "p_down": 0.3519, "flat": 145, "p_flat": 0.2788, "mean_return": 0.004217, "median_return": -0.000387, "stdev_return": 0.060514, "min_return": -0.191819, "max_return": 0.289616}, "tickers_detail": {"TSLA": {"n_weeks": 104, "n_dropped": 0, "n_fallback_weeks": 12, "n_thin_weeks": 0, "dropped": [], "weeks": 104, "up": 39, "p_up": 0.375, "down": 44, "p_down": 0.4231, "flat": 21, "p_flat": 0.2019, "mean_return": 0.009175, "median_return": -0.008509, "stdev_return": 0.077509, "min_return": -0.149367, "max_return": 0.289616}, "AAPL": {"n_weeks": 104, "n_dropped": 0, "n_fallback_weeks": 12, "n_thin_weeks": 0, "dropped": [], "weeks": 104, "up": 42, "p_up": 0.4038, "down": 30, "p_down": 0.2885, "flat": 32, "p_flat": 0.3077, "mean_return": 0.003592, "median_return": 0.005282, "stdev_return": 0.038521, "min_return": -0.134283, "max_return": 0.133014}, "NVDA": {"n_weeks": 104, "n_dropped": 0, "n_fallback_weeks": 12, "n_thin_weeks": 0, "dropped": [], "weeks": 104, "up": 44, "p_up": 0.4231, "down": 37, "p_down": 0.3558, "flat": 23, "p_flat": 0.2212, "mean_return": 0.006148, "median_return": 0.006232, "stdev_return": 0.061316, "min_return": -0.156954, "max_return": 0.188737}, "ORCL": {"n_weeks": 104, "n_dropped": 0, "n_fallback_weeks": 12, "n_thin_weeks": 0, "dropped": [], "weeks": 104, "up": 39, "p_up": 0.375, "down": 41, "p_down": 0.3942, "flat": 24, "p_flat": 0.2308, "mean_return": 0.003285, "median_return": -0.003638, "stdev_return": 0.075583, "min_return": -0.191819, "max_return": 0.270562}, "MSFT": {"n_weeks": 104, "n_dropped": 0, "n_fallback_weeks": 12, "n_thin_weeks": 0, "dropped": [], "weeks": 104, "up": 28, "p_up": 0.2692, "down": 31, "p_down": 0.2981, "flat": 45, "p_flat": 0.4327, "mean_return": -0.001113, "median_return": -0.002229, "stdev_return": 0.03589, "min_return": -0.080994, "max_return": 0.139515}}, "generated_at": "2026-06-28T19:17:54.096418+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+
