@@ -1,0 +1,37 @@
+FRIDAY PRICE-LEVEL-TOUCH — NVDA (threshold ±$5.00)
+Lookback = 730 calendar days
+Friday scan = 9:30 AM–4:00 PM ET, 1-minute bars
+Thursday baseline = 3:50–3:55 PM ET (per-minute) + 3:50–55 average
+Touch = Friday session high/low reaches Thursday ref ± threshold
+Generated 2026-06-28 00:51:48  |  Alpaca Markets API
+======================================================================================
+
+══════════════════════════════════════════════════════════════════════════════════════
+  NVDA  —  level threshold ±$5.00     (Thursday close baseline → Friday touch)
+══════════════════════════════════════════════════════════════════════════════════════
+  Fridays analyzed: 101   skipped (no data): 4   (7 week(s) used a pre-Thursday baseline — Thu holiday)
+
+      Thu ref  Fridays          +$5 hit          -$5 hit            Both         Neither
+  ----------- --------   --------------   --------------   -------------   -------------
+      3:50 PM      101       14 (13.9%)       26 (25.7%)        0 (0.0%)      61 (60.4%)  
+      3:51 PM      101       14 (13.9%)       25 (24.8%)        0 (0.0%)      62 (61.4%)  
+      3:52 PM      101       14 (13.9%)       25 (24.8%)        0 (0.0%)      62 (61.4%) ◀
+      3:53 PM      101       15 (14.9%)       25 (24.8%)        1 (1.0%)      62 (61.4%)  
+      3:54 PM      101       15 (14.9%)       24 (23.8%)        1 (1.0%)      63 (62.4%)  
+      3:55 PM      101       13 (12.9%)       24 (23.8%)        0 (0.0%)      64 (63.4%)  
+  3:50–55 avg      101       14 (13.9%)       24 (23.8%)        0 (0.0%)      63 (62.4%)  
+
+      Thu ref    avg up swing   avg down swing   max up swing   max down swing
+  -----------   -------------  ---------------  -------------  ---------------
+      3:50 PM          +$2.24           -$2.70        +$15.35          -$14.92
+      3:51 PM          +$2.30           -$2.64        +$15.59          -$14.81
+      3:52 PM          +$2.27           -$2.68        +$15.73          -$14.77
+      3:53 PM          +$2.27           -$2.67        +$15.48          -$14.92
+      3:54 PM          +$2.25           -$2.69        +$15.21          -$14.95
+      3:55 PM          +$2.26           -$2.69        +$15.14          -$14.57
+  3:50–55 avg          +$2.27           -$2.68        +$15.42          -$14.82
+
+  Steadiest baseline  (avg |deviation from the 3:50–55 mean|, lower = steadier):
+    3:52 PM $0.083 ◀    3:53 PM $0.096    3:51 PM $0.108    3:50 PM $0.143    3:54 PM $0.151    3:55 PM $0.178
+  → Recommended Thursday reference for NVDA: 3:52 PM
+
