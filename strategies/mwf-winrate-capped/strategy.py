@@ -20,9 +20,18 @@ or `python strategy.py` to also produce the contract artifacts.
 """
 from __future__ import annotations
 
+# OpenBLAS/NumPy on the self-hosted runner aborts with "Memory allocation still
+# failed after 10 retries, giving up" when it tries to reserve a per-thread
+# buffer for every CPU core under memory pressure. Cap the BLAS thread pools to
+# 1 BEFORE NumPy is imported (pandas / yfinance / matplotlib pull it in lazily
+# inside main()). This backtest is I/O-bound (Alpaca fetches), so it costs nothing.
+import os
+for _blas_var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+                  "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_blas_var, "1")
+
 import csv
 import json
-import os
 import sys
 import traceback
 from datetime import datetime, timezone as dt_timezone

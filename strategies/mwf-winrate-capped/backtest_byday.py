@@ -26,6 +26,14 @@ strategy.py, which wraps run_all() and emits the metrics/trades/chart contract.
 ║    WIN_RATE_TOL      — ± tolerance around the band                    ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
+import os
+# Cap BLAS thread pools to 1 before NumPy loads (via analysis.backtester's pandas
+# import inside run_all) — avoids the OpenBLAS "Memory allocation still failed
+# after 10 retries" abort on the runner. Harmless when strategy.py already set it.
+for _blas_var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+                  "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_blas_var, "1")
+
 import math
 from datetime import date, timedelta
 
