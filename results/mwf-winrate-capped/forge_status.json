@@ -1,0 +1,8 @@
+{
+  "strategy": "mwf-winrate-capped",
+  "started_at": "2026-07-07T01:57:41.138665+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-07-07T02:12:02.782609+00:00"
+}
