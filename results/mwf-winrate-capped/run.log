@@ -1,10 +1,31 @@
 === pip install ===
 
-=== strategy stdout (exit 1) ===
+=== strategy stdout (exit 0) ===
+  Data source: Alpaca Markets API
+  Tickers: TSLA, AAPL   Option types: C, P
+  Win-rate cap: best day must land in [44%, 51%] (target 45%-50%).
+
+  Backtesting TSLA...
+  Backtesting AAPL...
+
+==============================================================
+  STRATEGY SUMMARY — Mon/Wed/Fri win-rate-capped 0DTE
+==============================================================
+  Tickers     : TSLA, AAPL
+  Win-rate cap: best day in [44%, 51%]
+  Data source : MIXED real + Black-Scholes sim
+  Trades      : 556
+  Win rate    : 46.2%
+  Total P&L   : $14,865.99
+  Avg / trade : $26.74
+  Max drawdown: $-1,565.00
+  CALLS       : win 46%  $7,958  (278 trades)
+  PUTS        : win 47%  $6,908  (278 trades)
+==============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "mwf-winrate-capped", "tickers": ["TSLA", "AAPL"], "days": ["Monday", "Wednesday", "Friday"], "option_types": ["call", "put"], "target_spend": 1.0, "win_rate_target": [0.45, 0.5], "win_rate_band": [0.44, 0.51], "schedule": [{"day": "Monday", "lookback_days": 140, "window": "15:00-16:00 ET"}, {"day": "Wednesday", "lookback_days": 140, "window": "15:00-16:00 ET"}, {"day": "Friday", "lookback_days": 730, "window": "14:00-16:00 ET"}], "n_trades": 556, "win_rate": 0.4622, "total_pnl": 14865.99, "avg_pnl": 26.74, "best_trade": 1056.0, "worst_trade": -319.0, "max_drawdown": -1565.0, "sharpe": 0.195, "data_source": "MIXED real + Black-Scholes sim", "calls": {"n_trades": 278, "win_rate": 0.4568, "total_pnl": 7957.64, "avg_pnl": 28.62, "best_trade": 816.0, "worst_trade": -319.0, "max_drawdown": -832.0, "sharpe": 0.22, "data_source": "MIXED real + Black-Scholes sim"}, "puts": {"n_trades": 278, "win_rate": 0.4676, "total_pnl": 6908.35, "avg_pnl": 24.85, "best_trade": 1056.0, "worst_trade": -195.0, "max_drawdown": -1565.0, "sharpe": 0.173, "data_source": "MIXED real + Black-Scholes sim"}, "by_day": {"Monday": {"n_trades": 72, "win_rate": 0.4861, "total_pnl": 3145.0, "avg_pnl": 43.68, "best_trade": 1056.0, "worst_trade": -123.0, "max_drawdown": -458.0, "sharpe": 0.248, "data_source": "REAL Alpaca option bars"}, "Wednesday": {"n_trades": 80, "win_rate": 0.4875, "total_pnl": 2922.99, "avg_pnl": 36.54, "best_trade": 525.0, "worst_trade": -157.0, "max_drawdown": -359.0, "sharpe": 0.291, "data_source": "MIXED real + Black-Scholes sim"}, "Friday": {"n_trades": 404, "win_rate": 0.453, "total_pnl": 8798.0, "avg_pnl": 21.78, "best_trade": 816.0, "worst_trade": -319.0, "max_drawdown": -1422.0, "sharpe": 0.166, "data_source": "REAL Alpaca option bars"}}, "by_schedule": [{"ticker": "TSLA", "day": "Monday", "opt_type": "call", "entry_time": "3:15 PM", "exit_time": "3:20 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 18, "wins": 9, "win_rate": 0.5, "total_pnl": 673.0, "avg_pnl": 37.39, "best_day": 313.0, "worst_day": -66.0, "premium_spent": 3589.0, "return_on_spend": 0.1875, "eligible": true}, {"ticker": "TSLA", "day": "Monday", "opt_type": "put", "entry_time": "3:05 PM", "exit_time": "3:15 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 18, "wins": 9, "win_rate": 0.5, "total_pnl": 1003.0, "avg_pnl": 55.72, "best_day": 1056.0, "worst_day": -102.0, "premium_spent": 2784.0, "return_on_spend": 0.3603, "eligible": true}, {"ticker": "TSLA", "day": "Wednesday", "opt_type": "call", "entry_time": "3:50 PM", "exit_time": "3:55 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 20, "wins": 9, "win_rate": 0.45, "total_pnl": 471.64, "avg_pnl": 23.58, "best_day": 281.0, "worst_day": -157.0, "premium_spent": 3144.35, "return_on_spend": 0.15, "eligible": true}, {"ticker": "TSLA", "day": "Wednesday", "opt_type": "put", "entry_time": "3:20 PM", "exit_time": "3:35 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 20, "wins": 10, "win_rate": 0.5, "total_pnl": 463.35, "avg_pnl": 23.17, "best_day": 200.0, "worst_day": -129.0, "premium_spent": 3858.48, "return_on_spend": 0.1201, "eligible": true}, {"ticker": "TSLA", "day": "Friday", "opt_type": "call", "entry_time": "3:45 PM", "exit_time": "3:55 PM", "window": "14:00-16:00 ET", "lookback_days": 730, "n_trades": 101, "wins": 46, "win_rate": 0.4554, "total_pnl": 2549.0, "avg_pnl": 25.24, "best_day": 816.0, "worst_day": -319.0, "premium_spent": 16756.0, "return_on_spend": 0.1521, "eligible": true}, {"ticker": "TSLA", "day": "Friday", "opt_type": "put", "entry_time": "2:15 PM", "exit_time": "3:30 PM", "window": "14:00-16:00 ET", "lookback_days": 730, "n_trades": 101, "wins": 46, "win_rate": 0.4554, "total_pnl": 2917.0, "avg_pnl": 28.88, "best_day": 745.0, "worst_day": -195.0, "premium_spent": 17832.0, "return_on_spend": 0.1636, "eligible": true}, {"ticker": "AAPL", "day": "Monday", "opt_type": "call", "entry_time": "3:40 PM", "exit_time": "3:55 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 18, "wins": 8, "win_rate": 0.4444, "total_pnl": 456.0, "avg_pnl": 25.33, "best_day": 616.0, "worst_day": -123.0, "premium_spent": 2168.0, "return_on_spend": 0.2103, "eligible": true}, {"ticker": "AAPL", "day": "Monday", "opt_type": "put", "entry_time": "3:05 PM", "exit_time": "3:35 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 18, "wins": 9, "win_rate": 0.5, "total_pnl": 1013.0, "avg_pnl": 56.28, "best_day": 472.0, "worst_day": -102.0, "premium_spent": 2464.0, "return_on_spend": 0.4111, "eligible": true}, {"ticker": "AAPL", "day": "Wednesday", "opt_type": "call", "entry_time": "3:30 PM", "exit_time": "3:55 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 20, "wins": 10, "win_rate": 0.5, "total_pnl": 1867.0, "avg_pnl": 93.35, "best_day": 525.0, "worst_day": -80.0, "premium_spent": 2252.0, "return_on_spend": 0.829, "eligible": true}, {"ticker": "AAPL", "day": "Wednesday", "opt_type": "put", "entry_time": "3:00 PM", "exit_time": "3:05 PM", "window": "15:00-16:00 ET", "lookback_days": 140, "n_trades": 20, "wins": 10, "win_rate": 0.5, "total_pnl": 121.0, "avg_pnl": 6.05, "best_day": 105.0, "worst_day": -46.0, "premium_spent": 2952.0, "return_on_spend": 0.041, "eligible": true}, {"ticker": "AAPL", "day": "Friday", "opt_type": "call", "entry_time": "3:45 PM", "exit_time": "3:50 PM", "window": "14:00-16:00 ET", "lookback_days": 730, "n_trades": 101, "wins": 45, "win_rate": 0.4455, "total_pnl": 1941.0, "avg_pnl": 19.22, "best_day": 624.0, "worst_day": -100.0, "premium_spent": 12650.0, "return_on_spend": 0.1534, "eligible": true}, {"ticker": "AAPL", "day": "Friday", "opt_type": "put", "entry_time": "3:20 PM", "exit_time": "3:40 PM", "window": "14:00-16:00 ET", "lookback_days": 730, "n_trades": 101, "wins": 46, "win_rate": 0.4554, "total_pnl": 1391.0, "avg_pnl": 13.77, "best_day": 625.0, "worst_day": -100.0, "premium_spent": 13498.0, "return_on_spend": 0.1031, "eligible": true}], "generated_at": "2026-07-07T02:12:02.552718+00:00"}
+===END_SUMMARY===
 
 === strategy stderr ===
-OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
-OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
-OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
-OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
 
