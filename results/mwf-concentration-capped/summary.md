@@ -1,26 +1,36 @@
-I've written the summary. Here is the complete contents of `results/mwf-concentration-capped/summary.md`:
+I've written the failure summary to `results/mwf-concentration-capped/summary.md` (pending your write approval). Here is the complete summary content:
 
-**Verdict:** A positive-looking $17,811 net across 520 trades, but the edge is thin (Sharpe 0.24, 46.5% win rate) and leans on a handful of Friday combos and a per-trade concentration cap that is set loose enough (51%) to let one big win carry a bucket — treat as a research signal, not a live edge.
+---
 
-### Results (With Outliers)
+**Verdict: the strategy crashed with `KeyError: 'rows'` while aggregating metrics — the backtest itself finished, but `build_metrics` assumed every combo returned a `rows` list, and the combos that had no eligible schedule don't.**
 
-| Metric | Calls | Puts |
-|---|---|---|
-| Trades | 242 | 278 |
-| Win rate | 44.2% | 48.6% |
-| Total P&L | $11,020 | $6,790 |
-| Avg P&L | $45.54 | $24.42 |
-| Best trade | $825 | $745 |
-| Worst trade | -$305 | -$195 |
-| Best entry → exit | AAPL Fri 3:40 PM → 3:55 PM ($4,418) | TSLA Fri 2:15 PM → 3:30 PM ($2,917) |
-| Data source | MIXED real + Black-Scholes sim | MIXED real + Black-Scholes sim |
+### Error
 
-Combined: 520 trades, 46.5% win rate, **$17,810.55** total P&L, $34.25 avg, best trade $825, worst -$305, max drawdown -$1,422, Sharpe 0.238. Ten of twelve day/type buckets were eligible; both Monday call buckets (TSLA, AAPL) had no eligible schedule and were skipped.
+```
+KeyError: 'rows'
+```
 
-### Results (Without Outliers)
+```
+Traceback (most recent call last):
+  File "strategies\mwf-concentration-capped\strategy.py", line 285, in main
+    metrics = build_metrics(all_results, MAX_SINGLE_TRADE_SHARE, TARGET_SPEND)
+  File "strategies\mwf-concentration-capped\strategy.py", line 194, in build_metrics
+    all_rows.extend(res["rows"])
+                    ~~~^^^^^^^^
+KeyError: 'rows'
+```
 
-No `outliers_removed` block is present in `metrics.json`, so a without-outliers pass is not available for this run. The concentration cap (`largest_single_win / net_total_pnl <= 0.51`) is this strategy's built-in fat-tail guard rather than an outlier-stripped re-run, so the numbers above are the only view.
+### Root-cause analysis
 
-### Oracle's Verdict
+The backtest ran to completion — all 12 ticker/day/type combos were evaluated and printed. The crash is purely in the **post-processing** step. `run_concentration()` returns two shapes: a **chosen** combo with `"rows"` (`backtest_concentration.py:240`), and a **no-eligible-schedule** combo that is `base` + a `"reason"` key and has **no `"rows"`** (`:207`, `:231`). `build_metrics` guards only against an empty dict, not a missing key — so the `reason`-only dicts for **TSLA Monday CALLS** and **AAPL Monday CALLS** (both `cap_excluded_all`, per the log) crash `res["rows"]`. The cap did its job rejecting over-concentrated schedules; the aggregation just never handled the "nothing chosen" case.
 
-The headline is genuinely positive — every chosen bucket has positive net P&L by construction (that's the eligibility rule), and the mix is broad (2 tickers × 3 days × 2 types, 520 trades). But the quality is uneven. The Friday buckets carry the book: the four Friday combos alone contribute ~$13,000 of the $17,811, and they rest on the longest lookback (730 days) with the lowest win rates (37–46%), meaning they profit from a few large winners rather than consistency — exactly the fat-tail dependence the concentration cap is meant to police, yet a 51% cap still permits a single win to be half a bucket's P&L (TSLA Monday puts sits at 50.4%, right at the line). The short-lookback (140-day) Wednesday/Monday buckets show prettier win rates (55–70%) but on only 18–20 trades each, which is too small to trust. Critically, the aggregate and the TSLA Wednesday buckets are flagged **MIXED real + Black-Scholes sim** — any simulated fills are model output, not tradeable market prints, and inflate confidence. Net: a plausible intraday-drift signal worth watching, but the low Sharpe (0.24), small per-bucket samples, and partial reliance on simulated bars make this inconclusive as a live edge — validate the Friday combos on out-of-sample real data before risking capital.
+### Suggested fixes
+
+1. In `strategy.py:194`, change `if res:` → `if res and res.get("rows"):`.
+2. Make `_combo_summary` (`strategy.py:196`) use `res.get(...)` so skipped combos summarise as `chosen: False` with their `skip_reason`.
+3. Or, cleaner: add `"rows": []` to `base` in `backtest_concentration.py:201–203` so every result carries a list. Pick this **or** #1.
+4. Add a regression assert that `len(all_rows) > 0` and `n_trades` matches the chosen combos.
+
+---
+
+The Write is blocked on a permission prompt — approve it and the summary lands on disk for Herald to pick up. Note: the existing file on disk currently holds a stale **success** summary (with a leading "I've written the summary…" preamble) from a prior run — this failure summary correctly replaces it.

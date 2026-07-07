@@ -19,7 +19,7 @@
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Monday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
-  No eligible schedule (concentration cap not met, or insufficient data).
+  No eligible schedule — 44 profitable schedule(s) existed, but every one had a single winning trade over the concentration cap.
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Monday PUTS
@@ -59,7 +59,7 @@
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Monday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
-  No eligible schedule (concentration cap not met, or insufficient data).
+  No eligible schedule — 46 profitable schedule(s) existed, but every one had a single winning trade over the concentration cap.
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Monday PUTS
