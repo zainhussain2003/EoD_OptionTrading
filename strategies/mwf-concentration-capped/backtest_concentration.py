@@ -114,8 +114,25 @@ def _print_combo_block(ticker, day_name, opt_type, res):
     print(bold(head))
     print(bold("─" * 82))
     if res is None or res.get("best") is None:
-        print(red("  No eligible schedule (concentration cap not met, or "
-                  "insufficient data).\n"))
+        reason = (res or {}).get("reason", "no_eligible_schedule")
+        nd = (res or {}).get("n_dates", 0)
+        npos = (res or {}).get("n_positive", 0)
+        msg = {
+            "insufficient_data":
+                f"No schedule — insufficient data ({nd} usable date(s) "
+                f"< 3 required).",
+            "no_schedules":
+                f"No schedule — no entry/exit pair had enough samples "
+                f"({nd} date(s) captured).",
+            "no_positive_schedule":
+                f"No eligible schedule — none of the tested schedules had a "
+                f"positive net total P&L ({nd} date(s)).",
+            "cap_excluded_all":
+                f"No eligible schedule — {npos} profitable schedule(s) existed, "
+                f"but every one had a single winning trade over the "
+                f"concentration cap.",
+        }.get(reason, "No eligible schedule.")
+        print(red("  " + msg + "\n"))
         return
     best = res["best"]
     summ = res["summ"]
@@ -181,18 +198,40 @@ def run_concentration(max_single_trade_share=MAX_SINGLE_TRADE_SHARE,
             for opt_type in config.option_types:
                 records = backtester.daily_capture.get((ticker, opt_type, spec.name), [])
                 usable = [r for r in records if r["source"] != SOURCE_NO_STOCK]
+                base = {"best": None, "day": spec.name,
+                        "window": (spec.window_start_minute, spec.window_end_minute),
+                        "lookback_days": spec.lookback_days, "n_dates": len(usable)}
+
+                # Not enough dates captured to compute any schedule.
                 if len(usable) < MIN_SAMPLES:
-                    all_results[(ticker, spec.name, opt_type)] = None
-                    _print_combo_block(ticker, spec.name, opt_type, None)
+                    res = {**base, "reason": "insufficient_data",
+                           "n_schedules": 0, "n_positive": 0}
+                    all_results[(ticker, spec.name, opt_type)] = res
+                    _print_combo_block(ticker, spec.name, opt_type, res)
                     continue
 
                 reps, meta = build_representatives(records)
                 stats = compute_pair_stats(
                     reps, spec.window_start_minute, spec.window_end_minute, _size_fn)
+                # A "positive" schedule has a positive net total AND a winning trade
+                # (the two things the cap needs). Whether ANY of them also clears the
+                # concentration cap is what separates "cap excluded all" from "no
+                # positive schedule existed in the first place".
+                n_positive = sum(1 for s in stats.values()
+                                 if s["total"] > 0 and s["max_win"] is not None)
                 best, ranked = find_optimal_pair(stats, score_key, eligible)
+
                 if best is None:
-                    all_results[(ticker, spec.name, opt_type)] = None
-                    _print_combo_block(ticker, spec.name, opt_type, None)
+                    if not stats:
+                        reason = "no_schedules"          # no pair had >= MIN_SAMPLES
+                    elif n_positive == 0:
+                        reason = "no_positive_schedule"  # nothing profitable to pick
+                    else:
+                        reason = "cap_excluded_all"      # profitable, but too concentrated
+                    res = {**base, "reason": reason,
+                           "n_schedules": len(stats), "n_positive": n_positive}
+                    all_results[(ticker, spec.name, opt_type)] = res
+                    _print_combo_block(ticker, spec.name, opt_type, res)
                     continue
 
                 rows = per_day_pnl(ticker, reps, meta, best["entry"], best["exit"],
@@ -201,7 +240,8 @@ def run_concentration(max_single_trade_share=MAX_SINGLE_TRADE_SHARE,
                 res = {"best": best, "rows": rows, "summ": summ, "ranked": ranked,
                        "day": spec.name,
                        "window": (spec.window_start_minute, spec.window_end_minute),
-                       "lookback_days": spec.lookback_days}
+                       "lookback_days": spec.lookback_days,
+                       "n_schedules": len(stats), "n_positive": n_positive}
                 all_results[(ticker, spec.name, opt_type)] = res
                 _print_combo_block(ticker, spec.name, opt_type, res)
 

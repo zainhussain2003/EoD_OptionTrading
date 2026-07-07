@@ -79,7 +79,11 @@ def _combo_summary(res):
         return {"chosen": False, "entry_time": None, "exit_time": None,
                 "n_trades": 0, "win_rate": 0.0, "total_pnl": 0.0, "avg_pnl": 0.0,
                 "single_trade_share": None, "largest_win": 0.0,
-                "return_on_spend": 0.0, "data_source": "NONE"}
+                "return_on_spend": 0.0, "data_source": "NONE",
+                "skip_reason": (res or {}).get("reason", "no_eligible_schedule"),
+                "n_dates": (res or {}).get("n_dates", 0),
+                "n_schedules": (res or {}).get("n_schedules", 0),
+                "n_positive_schedules": (res or {}).get("n_positive", 0)}
     best = res["best"]
     summ = res["summ"]
     rows = res["rows"]
@@ -220,9 +224,16 @@ def print_summary(metrics):
     print(f"  Total P&L         : ${metrics.get('total_pnl', 0):,.2f}")
     print(f"  Avg / trade       : ${metrics.get('avg_pnl', 0):,.2f}")
     print(f"  Max drawdown      : ${metrics.get('max_drawdown', 0):,.2f}")
+    reason_txt = {
+        "insufficient_data": "insufficient data",
+        "no_schedules": "no schedule with enough samples",
+        "no_positive_schedule": "no profitable schedule",
+        "cap_excluded_all": "all profitable schedules over the concentration cap",
+    }
     for key, c in sorted(metrics.get("combos", {}).items()):
         if not c.get("chosen"):
-            print(f"  {key:<22}: no eligible schedule")
+            why = reason_txt.get(c.get("skip_reason"), "no eligible schedule")
+            print(f"  {key:<22}: skipped — {why}")
             continue
         share = c.get("single_trade_share")
         share_s = f"{share * 100:.0f}%" if share is not None else "n/a"
