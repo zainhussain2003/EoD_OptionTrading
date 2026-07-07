@@ -1,0 +1,10 @@
+=== pip install ===
+
+=== strategy stdout (exit 1) ===
+
+=== strategy stderr ===
+OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
+OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
+OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
+OpenBLAS error: Memory allocation still failed after 10 retries, giving up.
+
