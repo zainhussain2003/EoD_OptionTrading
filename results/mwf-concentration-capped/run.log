@@ -1,0 +1,132 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+
+══════════════════════════════════════════════════════════════════════════════════
+  MWF CONCENTRATION-CAPPED BACKTEST — win_rate × avg_payoff, target-spend sized
+  Concentration cap: single winning trade ≤ 51% of net total P&L
+  Position sizing  : contracts = ceil($1.00 / entry_price), min 1
+══════════════════════════════════════════════════════════════════════════════════
+  Data source: Alpaca Markets API
+  Tickers: TSLA, AAPL   Option types: CALL, PUT
+    Monday    lookback 140d   window 3:00 PM–4:00 PM
+    Wednesday lookback 140d   window 3:00 PM–4:00 PM
+    Friday    lookback 730d   window 2:00 PM–4:00 PM  (Thu fallback)
+
+  Backtesting TSLA Monday...
+  Backtesting TSLA Wednesday...
+  Backtesting TSLA Friday...
+  Backtesting AAPL Monday...
+  Backtesting AAPL Wednesday...
+  Backtesting AAPL Friday...
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Monday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  No eligible schedule (concentration cap not met, or insufficient data).
+
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Monday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:00 PM  Sell 3:10 PM   (REAL prices)
+  Win rate / total P&L: 61.1%  (11/18)   $+579.00
+  Single-trade share  : 50.4%   (biggest single win $292.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Wednesday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:00 PM  Sell 3:10 PM   (MIXED prices)
+  Win rate / total P&L: 65.0%  (13/20)   $+473.49
+  Single-trade share  : 49.0%   (biggest single win $232.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Wednesday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:20 PM  Sell 3:25 PM   (MIXED prices)
+  Win rate / total P&L: 55.0%  (11/20)   $+601.06
+  Single-trade share  : 38.9%   (biggest single win $234.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Friday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:50 PM  Sell 3:55 PM   (REAL prices)
+  Win rate / total P&L: 42.6%  (43/101)   $+4,242.00
+  Single-trade share  : 15.9%   (biggest single win $676.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  TSLA Friday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 2:15 PM  Sell 3:30 PM   (REAL prices)
+  Win rate / total P&L: 45.5%  (46/101)   $+2,917.00
+  Single-trade share  : 25.5%   (biggest single win $745.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Monday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  No eligible schedule (concentration cap not met, or insufficient data).
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Monday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:05 PM  Sell 3:35 PM   (REAL prices)
+  Win rate / total P&L: 55.6%  (10/18)   $+1,045.00
+  Single-trade share  : 45.2%   (biggest single win $472.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Wednesday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:45 PM  Sell 3:55 PM   (REAL prices)
+  Win rate / total P&L: 70.0%  (14/20)   $+1,887.00
+  Single-trade share  : 27.8%   (biggest single win $525.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Wednesday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:15 PM  Sell 3:20 PM   (REAL prices)
+  Win rate / total P&L: 55.0%  (11/20)   $+257.00
+  Single-trade share  : 40.5%   (biggest single win $104.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Friday CALLS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:40 PM  Sell 3:55 PM   (REAL prices)
+  Win rate / total P&L: 36.6%  (37/101)   $+4,418.00
+  Single-trade share  : 18.7%   (biggest single win $825.00 of total P&L — cap held)
+
+──────────────────────────────────────────────────────────────────────────────────
+  AAPL Friday PUTS
+──────────────────────────────────────────────────────────────────────────────────
+  Optimal schedule    : Buy 3:20 PM  Sell 3:40 PM   (REAL prices)
+  Win rate / total P&L: 45.5%  (46/101)   $+1,391.00
+  Single-trade share  : 44.9%   (biggest single win $625.00 of total P&L — cap held)
+
+
+================================================================
+  STRATEGY SUMMARY — MWF concentration-capped schedules
+================================================================
+  Concentration cap : single win ≤ 51% of net total P&L
+  Data source       : MIXED real + Black-Scholes sim
+  Trades            : 520
+  Win rate          : 46.5%
+  Total P&L         : $17,810.55
+  Avg / trade       : $34.25
+  Max drawdown      : $-1,422.00
+  AAPL|Friday|calls     : buy 3:40 PM sell 3:55 PM  win 37%  $4,418  (top-win share 19%)
+  AAPL|Friday|puts      : buy 3:20 PM sell 3:40 PM  win 46%  $1,391  (top-win share 45%)
+  AAPL|Monday|calls     : no eligible schedule
+  AAPL|Monday|puts      : buy 3:05 PM sell 3:35 PM  win 56%  $1,045  (top-win share 45%)
+  AAPL|Wednesday|calls  : buy 3:45 PM sell 3:55 PM  win 70%  $1,887  (top-win share 28%)
+  AAPL|Wednesday|puts   : buy 3:15 PM sell 3:20 PM  win 55%  $257  (top-win share 40%)
+  TSLA|Friday|calls     : buy 3:50 PM sell 3:55 PM  win 43%  $4,242  (top-win share 16%)
+  TSLA|Friday|puts      : buy 2:15 PM sell 3:30 PM  win 46%  $2,917  (top-win share 26%)
+  TSLA|Monday|calls     : no eligible schedule
+  TSLA|Monday|puts      : buy 3:00 PM sell 3:10 PM  win 61%  $579  (top-win share 50%)
+  TSLA|Wednesday|calls  : buy 3:00 PM sell 3:10 PM  win 65%  $473  (top-win share 49%)
+  TSLA|Wednesday|puts   : buy 3:20 PM sell 3:25 PM  win 55%  $601  (top-win share 39%)
+================================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "mwf-concentration-capped", "tickers": ["TSLA", "AAPL"], "days": ["Monday", "Wednesday", "Friday"], "option_types": ["calls", "puts"], "ranking_metric": "win_rate x avg_payoff (max expected profit)", "max_single_trade_share": 0.51, "target_spend": 1.0, "eligibility": "net_total_pnl > 0 AND largest_single_win / net_total_pnl <= max_single_trade_share", "n_trades": 520, "win_rate": 0.4654, "total_pnl": 17810.55, "avg_pnl": 34.25, "best_trade": 825.0, "worst_trade": -305.0, "max_drawdown": -1422.0, "sharpe": 0.238, "data_source": "MIXED real + Black-Scholes sim", "combos": {"TSLA|Monday|calls": {"chosen": false, "entry_time": null, "exit_time": null, "n_trades": 0, "win_rate": 0.0, "total_pnl": 0.0, "avg_pnl": 0.0, "single_trade_share": null, "largest_win": 0.0, "return_on_spend": 0.0, "data_source": "NONE"}, "TSLA|Monday|puts": {"chosen": true, "entry_time": "3:00 PM", "exit_time": "3:10 PM", "lookback_days": 140, "n_trades": 18, "wins": 11, "win_rate": 0.6111, "total_pnl": 579.0, "avg_pnl": 32.17, "best_day": 292.0, "worst_day": -120.0, "largest_win": 292.0, "single_trade_share": 0.5043, "premium_spent": 2479.0, "return_on_spend": 0.2336, "n_skipped": 2, "data_source": "REAL Alpaca option bars"}, "TSLA|Wednesday|calls": {"chosen": true, "entry_time": "3:00 PM", "exit_time": "3:10 PM", "lookback_days": 140, "n_trades": 20, "wins": 13, "win_rate": 0.65, "total_pnl": 473.49, "avg_pnl": 23.67, "best_day": 232.0, "worst_day": -86.0, "largest_win": 232.0, "single_trade_share": 0.49, "premium_spent": 2824.92, "return_on_spend": 0.1676, "n_skipped": 0, "data_source": "MIXED real + Black-Scholes sim"}, "TSLA|Wednesday|puts": {"chosen": true, "entry_time": "3:20 PM", "exit_time": "3:25 PM", "lookback_days": 140, "n_trades": 20, "wins": 11, "win_rate": 0.55, "total_pnl": 601.06, "avg_pnl": 30.05, "best_day": 234.0, "worst_day": -66.0, "largest_win": 234.0, "single_trade_share": 0.3893, "premium_spent": 2998.47, "return_on_spend": 0.2005, "n_skipped": 0, "data_source": "MIXED real + Black-Scholes sim"}, "TSLA|Friday|calls": {"chosen": true, "entry_time": "3:50 PM", "exit_time": "3:55 PM", "lookback_days": 730, "n_trades": 101, "wins": 43, "win_rate": 0.4257, "total_pnl": 4242.0, "avg_pnl": 42.0, "best_day": 676.0, "worst_day": -305.0, "largest_win": 676.0, "single_trade_share": 0.1594, "premium_spent": 17320.0, "return_on_spend": 0.2449, "n_skipped": 3, "data_source": "REAL Alpaca option bars"}, "TSLA|Friday|puts": {"chosen": true, "entry_time": "2:15 PM", "exit_time": "3:30 PM", "lookback_days": 730, "n_trades": 101, "wins": 46, "win_rate": 0.4554, "total_pnl": 2917.0, "avg_pnl": 28.88, "best_day": 745.0, "worst_day": -195.0, "largest_win": 745.0, "single_trade_share": 0.2554, "premium_spent": 17832.0, "return_on_spend": 0.1636, "n_skipped": 3, "data_source": "REAL Alpaca option bars"}, "AAPL|Monday|calls": {"chosen": false, "entry_time": null, "exit_time": null, "n_trades": 0, "win_rate": 0.0, "total_pnl": 0.0, "avg_pnl": 0.0, "single_trade_share": null, "largest_win": 0.0, "return_on_spend": 0.0, "data_source": "NONE"}, "AAPL|Monday|puts": {"chosen": true, "entry_time": "3:05 PM", "exit_time": "3:35 PM", "lookback_days": 140, "n_trades": 18, "wins": 10, "win_rate": 0.5556, "total_pnl": 1045.0, "avg_pnl": 58.06, "best_day": 472.0, "worst_day": -102.0, "largest_win": 472.0, "single_trade_share": 0.4517, "premium_spent": 2281.0, "return_on_spend": 0.4581, "n_skipped": 2, "data_source": "REAL Alpaca option bars"}, "AAPL|Wednesday|calls": {"chosen": true, "entry_time": "3:45 PM", "exit_time": "3:55 PM", "lookback_days": 140, "n_trades": 20, "wins": 14, "win_rate": 0.7, "total_pnl": 1887.0, "avg_pnl": 94.35, "best_day": 525.0, "worst_day": -116.0, "largest_win": 525.0, "single_trade_share": 0.2782, "premium_spent": 2418.0, "return_on_spend": 0.7804, "n_skipped": 0, "data_source": "REAL Alpaca option bars"}, "AAPL|Wednesday|puts": {"chosen": true, "entry_time": "3:15 PM", "exit_time": "3:20 PM", "lookback_days": 140, "n_trades": 20, "wins": 11, "win_rate": 0.55, "total_pnl": 257.0, "avg_pnl": 12.85, "best_day": 104.0, "worst_day": -56.0, "largest_win": 104.0, "single_trade_share": 0.4047, "premium_spent": 2377.0, "return_on_spend": 0.1081, "n_skipped": 0, "data_source": "REAL Alpaca option bars"}, "AAPL|Friday|calls": {"chosen": true, "entry_time": "3:40 PM", "exit_time": "3:55 PM", "lookback_days": 730, "n_trades": 101, "wins": 37, "win_rate": 0.3663, "total_pnl": 4418.0, "avg_pnl": 43.74, "best_day": 825.0, "worst_day": -230.0, "largest_win": 825.0, "single_trade_share": 0.1867, "premium_spent": 12634.0, "return_on_spend": 0.3497, "n_skipped": 3, "data_source": "REAL Alpaca option bars"}, "AAPL|Friday|puts": {"chosen": true, "entry_time": "3:20 PM", "exit_time": "3:40 PM", "lookback_days": 730, "n_trades": 101, "wins": 46, "win_rate": 0.4554, "total_pnl": 1391.0, "avg_pnl": 13.77, "best_day": 625.0, "worst_day": -100.0, "largest_win": 625.0, "single_trade_share": 0.4493, "premium_spent": 13498.0, "return_on_spend": 0.1031, "n_skipped": 3, "data_source": "REAL Alpaca option bars"}}, "generated_at": "2026-07-07T03:17:21.073032+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+
