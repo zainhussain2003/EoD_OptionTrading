@@ -1,0 +1,8 @@
+{
+  "strategy": "friday_intraday_concentration_capped",
+  "started_at": "2026-07-09T22:28:16.944124+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-07-09T22:50:38.947593+00:00"
+}
