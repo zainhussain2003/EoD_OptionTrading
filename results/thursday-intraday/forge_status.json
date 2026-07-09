@@ -1,0 +1,8 @@
+{
+  "strategy": "thursday-intraday",
+  "started_at": "2026-07-09T18:00:33.255096+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-07-09T18:05:21.710295+00:00"
+}
