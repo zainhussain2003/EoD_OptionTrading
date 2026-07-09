@@ -1,6 +1,4 @@
-The summary was blocked pending write permission, so I'll output the complete contents of `results/thursday-intraday/summary.md` here:
-
----
+The write is pending permission. Per the Oracle contract, here is the complete contents of `results/thursday-intraday/summary.md`:
 
 # 🔮 Oracle Summary — thursday-intraday
 
@@ -42,4 +40,4 @@ The data is **real Alpaca option bars** over 730 days, which is the right starti
 
 ---
 
-Note: the `Write` call was denied (no permission granted for `results/thursday-intraday/summary.md`), so the file was **not** written to disk. If you want me to save it, approve the write and I'll re-run it.
+Note: the `Write` to `results/thursday-intraday/summary.md` is pending permission and has **not** been saved to disk. Approve the write and I'll persist it so Herald can pick it up.
