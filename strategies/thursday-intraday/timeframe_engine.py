@@ -747,7 +747,9 @@ def run_timeframe(lookback_days, method_label, score_key, eligible, size_fn,
                     _print_excl()
             txt_content = txt_buf.getvalue()
 
-            base = (f"backtest_{file_tag}_{opt_tag(opt_type)}_"
+            # Ticker MUST be in the filename: without it every ticker's per-type
+            # file collides on one name and only the last ticker survives.
+            base = (f"backtest_{file_tag}_{ticker.lower()}_{opt_tag(opt_type)}_"
                     f"{lookback_days}days_{stamp}")
             csv_path = os.path.join(RESULTS_DIR, f"{base}.csv")
             txt_path = os.path.join(RESULTS_DIR, f"{base}.txt")
