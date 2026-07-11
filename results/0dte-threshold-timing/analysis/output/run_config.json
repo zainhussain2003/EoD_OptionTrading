@@ -1,0 +1,196 @@
+{
+  "universe": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "ORCL",
+    "AMD"
+  ],
+  "date_range": {
+    "start": "2026-01-05",
+    "end": "2026-03-13",
+    "n_sessions": 50
+  },
+  "thresholds_pct": [
+    20,
+    25,
+    30,
+    40,
+    50,
+    60,
+    70,
+    75,
+    80,
+    90,
+    100
+  ],
+  "entry_sweep": {
+    "start_min": 575,
+    "end_min": 930,
+    "step_min": 5
+  },
+  "fill_modes": [
+    "mid",
+    "market"
+  ],
+  "strike_band": 4,
+  "walk_forward": {
+    "train_weeks": 6,
+    "test_weeks": 2,
+    "expanding": false,
+    "max_exit_rule": [
+      "session_close",
+      null
+    ]
+  },
+  "detected_expiry_cadence": {
+    "AAPL": {
+      "n_expiries": 50,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "MSFT": {
+      "n_expiries": 30,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "NVDA": {
+      "n_expiries": 50,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "GOOGL": {
+      "n_expiries": 30,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "AMZN": {
+      "n_expiries": 50,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "META": {
+      "n_expiries": 50,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "TSLA": {
+      "n_expiries": 50,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2026-01-05",
+      "last_expiry": "2026-03-13"
+    },
+    "ORCL": {
+      "n_expiries": 10,
+      "expiry_dows": [
+        "Fri"
+      ],
+      "first_expiry": "2026-01-09",
+      "last_expiry": "2026-03-13"
+    },
+    "AMD": {
+      "n_expiries": 10,
+      "expiry_dows": [
+        "Fri"
+      ],
+      "first_expiry": "2026-01-09",
+      "last_expiry": "2026-03-13"
+    }
+  },
+  "row_counts": {
+    "AAPL": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "MSFT": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "NVDA": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "GOOGL": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "AMZN": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "META": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "TSLA": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "ORCL": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    },
+    "AMD": {
+      "rows": 39500,
+      "instances": 72000,
+      "buckets": 1040
+    }
+  },
+  "data_source": "SIMULATED (Black-Scholes) \u2014 NOT A REAL EDGE"
+}

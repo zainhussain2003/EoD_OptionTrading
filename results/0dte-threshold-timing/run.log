@@ -1,0 +1,30 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+[data] ALPACA_API_KEY / ALPACA_SECRET_KEY not set — using SIMULATED fallback
+[sweep] entry-sweep + Modes A/B/C over 355,500 contract-minutes, per symbol …
+    AAPL: rows=   39500  instances=   72000  buckets=1040
+    MSFT: rows=   39500  instances=   72000  buckets=1040
+    NVDA: rows=   39500  instances=   72000  buckets=1040
+   GOOGL: rows=   39500  instances=   72000  buckets=1040
+    AMZN: rows=   39500  instances=   72000  buckets=1040
+    META: rows=   39500  instances=   72000  buckets=1040
+    TSLA: rows=   39500  instances=   72000  buckets=1040
+    ORCL: rows=   39500  instances=   72000  buckets=1040
+     AMD: rows=   39500  instances=   72000  buckets=1040
+
+==============================================================
+  0DTE THRESHOLD-TIMING — done
+  data      : SIMULATED (Black-Scholes) — NOT A REAL EDGE
+  range     : 2026-01-05 → 2026-03-13  (50 sessions)
+  instances : 648,000   buckets: 9,360
+  validation: mid≥market=True regimes=True overlap_ok=True spotcheck=True
+  Mode C +ve market combos: 659
+==============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "0dte-threshold-timing", "data_source": "SIMULATED (Black-Scholes) \u2014 NOT A REAL EDGE", "date_range": {"start": "2026-01-05", "end": "2026-03-13", "n_sessions": 50}, "universe": ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "ORCL", "AMD"], "n_contract_minutes": 355500, "n_instances": 648000, "n_buckets": 9360, "mode_c_positive_market_combos": 659, "validation": {"mid_ge_market_ok": true, "mid_ge_market_violation_groups": 0, "mid_ge_market_instances_compared": 324000, "regimes_ok": true, "no_overlap_ok": true, "spot_check_ok": true}, "generated_at": "2026-07-11T03:53:20.120192+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+
