@@ -1,0 +1,203 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+
+════════════════════════════════════════════════════════════════════════════════════
+  THURSDAY → FRIDAY AAPL/TSLA call & put probability
+  Lookback window: 365 calendar days
+════════════════════════════════════════════════════════════════════════════════════
+  Data source : Alpaca Markets API
+  Tickers     : AAPL, TSLA
+  Option types: CALL, PUT
+  Weekly pairs in window  : 52  (normal Thu→Fri; 3 shifted to Wed→Thu for a closed Friday)
+  Entry minutes (entry day): 3:55 PM, 3:56 PM, 3:57 PM, 3:58 PM, 3:59 PM
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  Collecting AAPL CALLs...
+  Collecting AAPL PUTs...
+  Collecting TSLA CALLs...
+  Collecting TSLA PUTs...
+
+====================================================================================
+  AAPL CALLS
+====================================================================================
+  Data source : REAL option bars   |   51 weekly pairs collected
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55   51 $   1.28   2.72x   17.71x      39%      33%      25%      22% 
+    3:56   51 $   1.26   2.77x   17.71x      39%      35%      27%      22% 
+    3:57   51 $   1.26   2.75x   16.67x      39%      37%      29%      24% 
+    3:58   51 $   1.25   2.76x   15.74x      39%      37%      29%      24% 
+    3:59   51 $   1.25   2.75x   14.91x      39%      35%      27%      20% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   48     -14.4 42%       -1.2 35%       -4.0 27%       +3.8 23%  
+    3:56   48     -14.4 42%       -0.3 38%       +2.5 29%       +4.1 23%  
+    3:57   48     -14.5 42%       +1.4 40%       +7.8 31%       +6.6 25%  
+    3:58   48     -14.4 42%       +1.5 40%       +8.3 31%       +7.1 25%  
+    3:59   48     -14.4 42%       -0.2 38%       +3.3 29%       +2.6 21%  
+
+====================================================================================
+  AAPL PUTS
+====================================================================================
+  Data source : REAL option bars   |   51 weekly pairs collected
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55   51 $   1.32   2.03x   11.16x      37%      31%      24%      12% 
+    3:56   51 $   1.33   2.00x   11.00x      41%      33%      20%       6% 
+    3:57   51 $   1.32   2.03x   10.27x      41%      33%      24%      12% 
+    3:58   51 $   1.32   2.02x   10.27x      41%      31%      24%      10% 
+    3:59   51 $   1.32   2.02x   10.55x      41%      37%      20%      12% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   48     -12.3 40%       -4.0 33%       -0.2 25%      -18.6 12%  
+    3:56   48      -8.1 42%       +1.3 35%       -3.9 21%      -37.3  6%  
+    3:57   48      -7.2 44%       +1.8 35%       -2.0 25%      -17.2 12%  
+    3:58   48      -7.4 44%       -3.5 33%       -1.1 25%      -25.0 10%  
+    3:59   48      -7.4 44%       +4.1 40%       -7.7 21%      -17.4 12%  
+
+====================================================================================
+  TSLA CALLS
+====================================================================================
+  Data source : REAL option bars   |   51 weekly pairs collected
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55   51 $   3.99   2.50x    9.48x      41%      35%      33%      29% 
+    3:56   51 $   3.98   2.48x    9.28x      41%      35%      33%      25% 
+    3:57   51 $   3.96   2.48x    8.70x      41%      37%      33%      25% 
+    3:58   51 $   3.94   2.50x    8.73x      41%      35%      33%      27% 
+    3:59   51 $   3.89   2.53x    8.30x      41%      39%      33%      29% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   50      -8.2 42%       +5.5 36%      +17.5 34%      +30.7 30%  
+    3:56   50      -8.3 42%       +5.6 36%      +17.6 34%      +26.4 26%  
+    3:57   50      -8.2 42%       +9.7 38%      +18.0 34%      +28.9 26%  
+    3:58   50      -8.3 42%       +6.0 36%      +18.0 34%      +29.5 28%  
+    3:59   50      -8.5 42%      +11.2 40%      +18.1 34%      +31.9 30%  
+
+====================================================================================
+  TSLA PUTS
+====================================================================================
+  Data source : REAL option bars   |   51 weekly pairs collected
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55   51 $   3.81   2.25x    7.76x      41%      37%      27%      20% 
+    3:56   51 $   3.81   2.23x    7.53x      41%      37%      25%      20% 
+    3:57   51 $   3.82   2.24x    8.42x      41%      37%      27%      22% 
+    3:58   51 $   3.83   2.24x    8.37x      39%      37%      29%      20% 
+    3:59   51 $   3.84   2.24x    7.97x      39%      37%      29%      20% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   48     -10.0 44%       +3.3 40%       +7.8 29%       +6.4 21%  
+    3:56   48     -10.1 44%       +3.1 40%       +5.9 27%       +6.4 21%  
+    3:57   48      -9.8 44%       +2.9 40%       +7.7 29%      +11.0 23%  
+    3:58   48     -12.8 42%       +2.8 40%      +10.4 31%       +6.5 21%  
+    3:59   48     -13.0 42%       +2.7 40%       +8.6 31%       +6.3 21%  
+
+====================================================================================
+  ALL TICKERS — CALLS COMBINED
+====================================================================================
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55  102 $   2.63   2.61x   17.71x      40%      34%      29%      25% 
+    3:56  102 $   2.62   2.63x   17.71x      40%      35%      30%      24% 
+    3:57  102 $   2.61   2.62x   16.67x      40%      37%      31%      25% 
+    3:58  102 $   2.59   2.63x   15.74x      40%      36%      31%      25% 
+    3:59  102 $   2.57   2.64x   14.91x      40%      37%      30%      25% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   98     -11.3 42%       +2.2 36%       +7.0 31%      +17.5 27%  
+    3:56   98     -11.3 42%       +2.7 37%      +10.2 32%      +15.5 24%  
+    3:57   98     -11.3 42%       +5.7 39%      +13.0 33%      +18.0 26%  
+    3:58   98     -11.3 42%       +3.8 38%      +13.2 33%      +18.5 27%  
+    3:59   98     -11.4 42%       +5.6 39%      +10.9 32%      +17.6 26%  
+
+====================================================================================
+  ALL TICKERS — PUTS COMBINED
+====================================================================================
+  RETURN targets (price multiple): 1x→×2.00  1.5x→×2.50  2x→×3.00  2.5x→×3.50
+
+  TOUCH PROBABILITY — chance the expiry-day option high reached the target
+   Entry    N  AvgEntry  AvgMax  BestMax     P>=1x  P>=1.5x    P>=2x  P>=2.5x
+  ------ ---- --------- ------- -------- -------- -------- -------- --------
+    3:55  102 $   2.57   2.14x   11.16x      39%      34%      25%      16% 
+    3:56  102 $   2.57   2.12x   11.00x      41%      35%      23%      13% 
+    3:57  102 $   2.57   2.13x   10.27x      41%      35%      25%      17% 
+    3:58  102 $   2.58   2.13x   10.27x      40%      34%      26%      15% 
+    3:59  102 $   2.58   2.13x   10.55x      40%      37%      25%      16% 
+
+  STRATEGY P&L — rest a limit at the target; if unfilled by 3:55 PM on
+  the expiry day, sell at 3:55 PM.  Cell = avg NET $ per $100 staked / fill%
+   Entry    N    1x target     1.5x target     2x target     2.5x target  
+               net/100  fill  net/100  fill  net/100  fill  net/100  fill 
+  ------ ----  -------------- -------------- -------------- --------------
+    3:55   96     -11.1 42%       -0.4 36%       +3.8 27%       -6.1 17%  
+    3:56   96      -9.1 43%       +2.2 38%       +1.0 24%      -15.5 14%  
+    3:57   96      -8.5 44%       +2.4 38%       +2.8 27%       -3.1 18%  
+    3:58   96     -10.1 43%       -0.3 36%       +4.6 28%       -9.2 16%  
+    3:59   96     -10.2 43%       +3.4 40%       +0.5 26%       -5.5 17%  
+
+────────────────────────────────────────────────────────────────────────────────────
+  Saved CSV: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\thursday\thu_fri_aapl_tsla_365days_2026-07-09_1343.csv
+  Saved TXT: C:\actions-runner\_work\EoD_OptionTrading\EoD_OptionTrading\results\thursday\thu_fri_aapl_tsla_365days_2026-07-09_1343.txt
+  CSV: per-entry detail + probability summary.  TXT: full tables.
+────────────────────────────────────────────────────────────────────────────────────
+
+
+==================================================================
+  STRATEGY SUMMARY — Thursday→Friday AAPL/TSLA calls & puts
+==================================================================
+  Data source : REAL Alpaca option bars
+  Trades      : 194
+  Win rate    : 38.7%
+  Total P&L   : $6,638.00
+  Avg / trade : $34.22
+  Max drawdown: $-3,294.00
+  Best entry/exit per leg (buy 3:55-3:59 Thu, sell limit-or-3:55 Fri):
+    AAPL_CALL   : buy 3:58 PM  target 2.0x  (win 35%, fill 31%, $629)
+    AAPL_PUT    : buy 3:59 PM  target 1.5x  (win 42%, fill 40%, $-770)
+    TSLA_CALL   : buy 3:59 PM  target 2.5x  (win 40%, fill 30%, $3,865)
+    TSLA_PUT    : buy 3:57 PM  target 2.5x  (win 38%, fill 23%, $2,914)
+==================================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "thursday", "tickers": ["AAPL", "TSLA"], "option_types": ["CALL", "PUT"], "entry_day": "Thursday (rolls to Wednesday when Friday is a market holiday)", "expiry_day": "Friday (weekly)", "entry_window": "3:55-3:59 PM ET", "exit_rule": "rest a limit at the return target; if unfilled by 3:55 PM ET on the expiry day, sell at 3:55 PM ET", "lookback_days": 365, "return_multiples": [1.0, 1.5, 2.0, 2.5], "data_source": "REAL Alpaca option bars", "n_trades": 194, "win_rate": 0.3866, "total_pnl": 6638.0, "avg_pnl": 34.22, "best_trade": 1317.5, "worst_trade": -909.0, "max_drawdown": -3294.0, "sharpe": 0.079, "legs": {"AAPL_CALL": {"ticker": "AAPL", "opt_type": "CALL", "direction": "bet up", "n_weekly_pairs": 51, "data_source": "REAL Alpaca option bars", "best_entry_time": "3:58 PM", "best_target_multiple": 2.0, "best_net_per_100": 8.33, "fill_rate": 0.3125, "win_rate": 0.3542, "avg_entry_price": 1.2514, "touch_prob_at_best_target": 0.2941, "n_trades": 48, "total_pnl": 629.0, "avg_pnl": 13.1, "best_trade": 880.0, "worst_trade": -486.0}, "AAPL_PUT": {"ticker": "AAPL", "opt_type": "PUT", "direction": "bet down", "n_weekly_pairs": 51, "data_source": "REAL Alpaca option bars", "best_entry_time": "3:59 PM", "best_target_multiple": 1.5, "best_net_per_100": 4.14, "fill_rate": 0.3958, "win_rate": 0.4167, "avg_entry_price": 1.3247, "touch_prob_at_best_target": 0.3725, "n_trades": 48, "total_pnl": -769.5, "avg_pnl": -16.03, "best_trade": 240.0, "worst_trade": -550.0}, "TSLA_CALL": {"ticker": "TSLA", "opt_type": "CALL", "direction": "bet up", "n_weekly_pairs": 51, "data_source": "REAL Alpaca option bars", "best_entry_time": "3:59 PM", "best_target_multiple": 2.5, "best_net_per_100": 31.95, "fill_rate": 0.3, "win_rate": 0.4, "avg_entry_price": 3.8931, "touch_prob_at_best_target": 0.2941, "n_trades": 50, "total_pnl": 3865.0, "avg_pnl": 77.3, "best_trade": 1112.5, "worst_trade": -909.0}, "TSLA_PUT": {"ticker": "TSLA", "opt_type": "PUT", "direction": "bet down", "n_weekly_pairs": 51, "data_source": "REAL Alpaca option bars", "best_entry_time": "3:57 PM", "best_target_multiple": 2.5, "best_net_per_100": 10.98, "fill_rate": 0.2292, "win_rate": 0.375, "avg_entry_price": 3.82, "touch_prob_at_best_target": 0.2157, "n_trades": 48, "total_pnl": 2913.5, "avg_pnl": 60.7, "best_trade": 1317.5, "worst_trade": -569.0}}, "generated_at": "2026-07-09T17:43:37.980629+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+
