@@ -57,14 +57,16 @@ def results_dir() -> str:
 def _load_data(cfg: Config, log) -> tuple:
     """Return (contract_df, source_label). Real Alpaca quotes if available, else
     the labelled SIMULATED fallback."""
-    if _alp.credentials_present():
-        log("[data] Alpaca credentials present — fetching real option quotes …")
-        raw = _alp.fetch_universe(cfg, log=log)
+    reason = _alp.availability_reason()
+    if reason == "ok":
+        log("[data] Alpaca credentials present — fetching real option data …")
+        raw, label = _alp.fetch_universe(cfg, log=log)
         if raw is not None and not raw.empty:
-            return _schema.validate_contract(raw, cfg), _schema.SOURCE_REAL
-        log("[data] real fetch returned nothing — falling back to SIMULATED")
+            return _schema.validate_contract(raw, cfg), label
+        log("[data] real fetch returned NO data — falling back to SIMULATED "
+            "(check option feed/subscription on the runner)")
     else:
-        log("[data] ALPACA_API_KEY / ALPACA_SECRET_KEY not set — using SIMULATED fallback")
+        log(f"[data] real data unavailable — {reason}; using SIMULATED fallback")
     sim = _schema.simulate_quote_frame(cfg)
     return _schema.validate_contract(sim, cfg), _schema.SOURCE_SIM
 

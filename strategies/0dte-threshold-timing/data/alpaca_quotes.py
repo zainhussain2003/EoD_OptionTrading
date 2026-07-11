@@ -1,59 +1,107 @@
 """
-data/alpaca_quotes.py — Alpaca historical OPTION-QUOTES adapter → data contract.
+data/alpaca_quotes.py — Alpaca historical OPTION adapter → data contract.
 
-The repo's existing fetcher pulls option OHLCV *bars* (last-trade prints). This
-study needs TOP-OF-BOOK bid/ask at each minute close, so this adapter uses the
-historical option QUOTES endpoint and resamples to the minute close (the last
-quote at/before each minute boundary), then emits the long contract:
+Mirrors the PROVEN key/client structure used by calls/ and puts/ (which pull real
+data on the runner):
+  - `load_dotenv()` then read ALPACA_API_KEY + ALPACA_API_SECRET from env
+    (ALPACA_SECRET_KEY is accepted too, since the pipeline sets that name);
+  - the import block is confined to the `alpaca.data.*` layer those fetchers use
+    — no `alpaca.trading.*` — so the module always loads on the runner;
+  - contracts are addressed by CONSTRUCTED OCC symbols (format_contract_symbol),
+    the same pattern calls/ and puts/ use, which works for EXPIRED contracts (a
+    12-month history is almost all expired — listing "active" contracts misses it).
 
-  ts, symbol, right, strike, expiry, bid, ask, underlying
-
-Contract discovery is EMPIRICAL: we list the option contracts Alpaca actually
-has for each underlying over the window (the vendor is the source of truth for
-which expiries exist), keep ATM ± cfg.strike_band strikes per expiry, and only
-pull the sessions where that expiry is the nearest forward target (which is all
-the analysis uses) to keep the quote volume sane.
-
-Everything is wrapped so a failure returns None and the caller falls back to the
-labelled SIMULATED frame — the pipeline never goes silent. This module is written
-to the documented alpaca-py interface; the self-hosted runner (with your keys and
-data subscription) is where it executes against the live API.
+This study needs TOP-OF-BOOK bid/ask at the minute close, so the PRIMARY path is
+historical option QUOTES (get_option_quotes), resampled to the minute close. The
+quotes request is imported behind a SEPARATE guard; if a runner's alpaca-py lacks
+it, we fall back to option BARS (last-trade close) with a modeled spread — clearly
+labelled so it is never mistaken for true top-of-book. Only if neither works does
+strategy.py drop to the labelled SIMULATED frame. Every fallback logs its reason.
 """
 from __future__ import annotations
 
 import os
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
 
+try:  # match calls/puts: load a local .env if present
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 ET = ZoneInfo("America/New_York")
 UTC = ZoneInfo("UTC")
 
+# ── proven import block (same layer calls/puts use) ──────────────────────────
+_IMPORT_ERROR = ""
 try:
     from alpaca.data.historical.stock import StockHistoricalDataClient
     from alpaca.data.historical.option import OptionHistoricalDataClient
-    from alpaca.data.requests import StockBarsRequest, OptionQuotesRequest
+    from alpaca.data.requests import StockBarsRequest, OptionBarsRequest
     from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
-    from alpaca.trading.client import TradingClient
-    from alpaca.trading.requests import GetOptionContractsRequest
-    from alpaca.trading.enums import AssetStatus, ContractType
     ALPACA_AVAILABLE = True
-except Exception:  # pragma: no cover - import guard
+except Exception as e:  # pragma: no cover - import guard
     ALPACA_AVAILABLE = False
+    _IMPORT_ERROR = f"{type(e).__name__}: {e}"
+
+# ── option QUOTES request: separate guard so its absence can't break loading ─
+try:
+    from alpaca.data.requests import OptionQuotesRequest
+    HAVE_QUOTES = True
+except Exception:
+    HAVE_QUOTES = False
+
+SOURCE_REAL_QUOTES = "REAL Alpaca option quotes (top-of-book, minute-close)"
+SOURCE_REAL_BARS = "REAL Alpaca option bars (last-trade close) + modeled spread"
+
+
+# ── OCC symbol + strike helpers (mirror repo conventions, self-contained) ────
+def format_contract_symbol(ticker: str, expiry: date, strike: float, right: str) -> str:
+    """OCC symbol, e.g. AAPL260612C00212500."""
+    cp = "C" if right.lower().startswith("c") else "P"
+    return f"{ticker}{expiry.strftime('%y%m%d')}{cp}{round(strike * 1000):08d}"
+
+
+def strike_interval(spot: float) -> float:
+    if spot >= 500:
+        return 5.0
+    if spot >= 200:
+        return 2.5
+    if spot >= 100:
+        return 5.0
+    if spot >= 50:
+        return 2.5
+    return 1.0
+
+
+def atm_and_band_strikes(spot: float, band: int) -> list:
+    step = strike_interval(spot)
+    atm = round(spot / step) * step
+    return sorted({round(atm + k * step, 2) for k in range(-band, band + 1) if atm + k * step > 0})
 
 
 def _keys():
     api = os.getenv("ALPACA_API_KEY", "")
-    sec = os.getenv("ALPACA_SECRET_KEY", "") or os.getenv("ALPACA_API_SECRET", "")
+    # calls/puts read ALPACA_API_SECRET; the pipeline env sets ALPACA_SECRET_KEY.
+    sec = os.getenv("ALPACA_API_SECRET", "") or os.getenv("ALPACA_SECRET_KEY", "")
     return api, sec
 
 
-def credentials_present() -> bool:
+def availability_reason() -> str:
     api, sec = _keys()
-    return bool(api and sec and ALPACA_AVAILABLE)
+    if not ALPACA_AVAILABLE:
+        return f"alpaca-py import failed ({_IMPORT_ERROR})"
+    if not api or not sec:
+        return "ALPACA_API_KEY / ALPACA_API_SECRET not set in env"
+    return "ok"
+
+
+def credentials_present() -> bool:
+    return availability_reason() == "ok"
 
 
 class AlpacaQuotesAdapter:
@@ -61,39 +109,10 @@ class AlpacaQuotesAdapter:
         self.cfg = cfg
         self.log = log
         api, sec = _keys()
-        self.stock = StockHistoricalDataClient(api, sec)
-        self.option = OptionHistoricalDataClient(api, sec)
-        self.trading = TradingClient(api, sec, paper=cfg.alpaca_paper)
-
-    # ── contract discovery (empirical expiry source of truth) ────────────────
-    def list_contracts(self, symbol: str, start: date, end: date) -> pd.DataFrame:
-        """Return DataFrame[contract_symbol, strike, expiry, right] Alpaca lists
-        for `symbol` with expiries in [start, end]."""
-        recs = []
-        page_token = None
-        while True:
-            req = GetOptionContractsRequest(
-                underlying_symbols=[symbol],
-                status=AssetStatus.ACTIVE,
-                expiration_date_gte=start,
-                expiration_date_lte=end,
-                limit=10000,
-                page_token=page_token,
-            )
-            resp = self.trading.get_option_contracts(req)
-            contracts = getattr(resp, "option_contracts", resp)
-            for c in contracts:
-                recs.append({
-                    "contract_symbol": c.symbol,
-                    "strike": float(c.strike_price),
-                    "expiry": c.expiration_date if isinstance(c.expiration_date, date)
-                    else pd.Timestamp(c.expiration_date).date(),
-                    "right": "call" if str(c.type).lower().endswith("call") else "put",
-                })
-            page_token = getattr(resp, "next_page_token", None)
-            if not page_token:
-                break
-        return pd.DataFrame(recs)
+        # same client construction as calls/puts alpaca_fetcher
+        self._stock = StockHistoricalDataClient(api, sec)
+        self._option = OptionHistoricalDataClient(api, sec)
+        self.used_bars_fallback = False
 
     # ── underlying minute closes ─────────────────────────────────────────────
     def underlying_minutes(self, symbol: str, start: datetime, end: datetime) -> pd.DataFrame:
@@ -102,7 +121,7 @@ class AlpacaQuotesAdapter:
             timeframe=TimeFrame(1, TimeFrameUnit.Minute),
             start=start, end=end, adjustment="raw", feed="iex",
         )
-        bars = self.stock.get_stock_bars(req).df
+        bars = self._stock.get_stock_bars(req).df
         if bars is None or bars.empty:
             return pd.DataFrame()
         if isinstance(bars.index, pd.MultiIndex):
@@ -110,101 +129,149 @@ class AlpacaQuotesAdapter:
         bars.index = pd.to_datetime(bars.index, utc=True)
         return bars[["close"]].rename(columns={"close": "underlying"})
 
-    # ── option quotes → minute close top-of-book ─────────────────────────────
-    def option_minute_quotes(self, contract_symbol: str,
+    # ── option minute bid/ask: quotes primary, bars fallback ─────────────────
+    def option_minute_bidask(self, contract_symbol: str,
                              start: datetime, end: datetime) -> pd.DataFrame:
-        req = OptionQuotesRequest(
-            symbol_or_symbols=contract_symbol, start=start, end=end,
-            feed=self.cfg.option_feed,
-        )
-        q = self.option.get_option_quotes(req).df
+        """Return minute-indexed DataFrame[bid, ask] (UTC index), or empty."""
+        if HAVE_QUOTES:
+            df = self._quotes(contract_symbol, start, end)
+            if not df.empty:
+                return df
+        # fallback: last-trade bars + modeled spread (mirrors calls/puts bars use)
+        return self._bars_bidask(contract_symbol, start, end)
+
+    def _quotes(self, contract_symbol, start, end) -> pd.DataFrame:
+        try:
+            req = OptionQuotesRequest(symbol_or_symbols=contract_symbol, start=start,
+                                      end=end, feed=self.cfg.option_feed)
+            q = self._option.get_option_quotes(req).df
+        except Exception:
+            return pd.DataFrame()
         if q is None or q.empty:
             return pd.DataFrame()
         if isinstance(q.index, pd.MultiIndex):
             q = q.xs(contract_symbol, level="symbol")
         q.index = pd.to_datetime(q.index, utc=True)
-        q = q[["bid_price", "ask_price"]].rename(
-            columns={"bid_price": "bid", "ask_price": "ask"})
-        # last quote at/before each minute close (top-of-book at the minute).
+        bidc = "bid_price" if "bid_price" in q.columns else ("bid" if "bid" in q.columns else None)
+        askc = "ask_price" if "ask_price" in q.columns else ("ask" if "ask" in q.columns else None)
+        if bidc is None or askc is None:
+            return pd.DataFrame()
+        q = q[[bidc, askc]].rename(columns={bidc: "bid", askc: "ask"})
         minute = q.resample("1min", label="right", closed="right").last()
         return minute.dropna(how="all")
 
-    # ── orchestration ────────────────────────────────────────────────────────
-    def fetch_universe(self) -> pd.DataFrame:
-        cfg = self.cfg
-        end_d = datetime.now(ET).date()
-        start_d = end_d - timedelta(days=cfg.lookback_days)
-        all_rows = []
-        for sym in cfg.tickers:
-            try:
-                cdf = self.list_contracts(sym, start_d, end_d + timedelta(days=7))
-            except Exception as e:
-                self.log(f"  [alpaca] {sym}: contract listing failed: {type(e).__name__}: {e}")
-                continue
-            if cdf.empty:
-                self.log(f"  [alpaca] {sym}: no contracts listed")
-                continue
-            expiries = sorted(cdf["expiry"].unique())
-            sym_rows = self._fetch_symbol(sym, cdf, expiries, start_d, end_d)
-            if sym_rows is not None and not sym_rows.empty:
-                all_rows.append(sym_rows)
-                self.log(f"  [alpaca] {sym}: {len(sym_rows)} contract-minutes")
-        if not all_rows:
+    def _bars_bidask(self, contract_symbol, start, end) -> pd.DataFrame:
+        """Last-trade OHLCV bars → synthetic bid/ask via a modeled spread. Flagged."""
+        try:
+            req = OptionBarsRequest(
+                symbol_or_symbols=contract_symbol,
+                timeframe=TimeFrame(1, TimeFrameUnit.Minute),
+                start=start, end=end, feed=self.cfg.option_feed,
+            )
+            b = self._option.get_option_bars(req).df
+        except Exception:
             return pd.DataFrame()
-        return pd.concat(all_rows, ignore_index=True)
+        if b is None or b.empty:
+            return pd.DataFrame()
+        if isinstance(b.index, pd.MultiIndex):
+            b = b.xs(contract_symbol, level="symbol")
+        b.index = pd.to_datetime(b.index, utc=True)
+        close = b["close"].astype(float)
+        half = np.maximum(close * 0.01, 0.05)  # modeled ~1% half-spread, 5c floor
+        self.used_bars_fallback = True
+        return pd.DataFrame({"bid": (close - half).clip(lower=0.0),
+                             "ask": close + half}, index=b.index)
 
-    def _fetch_symbol(self, sym, cdf, expiries, start_d, end_d) -> pd.DataFrame:
-        """For each session, pick the nearest-forward target expiry, keep ATM±band
-        strikes, pull minute quotes, and join the underlying."""
+    # ── empirical target-expiry probing via constructed OCC symbols ──────────
+    def _candidate_expiries(self, trade_date: date, max_ahead: int = 9) -> list:
+        out = [trade_date]
+        d = trade_date
+        for _ in range(max_ahead):
+            d += timedelta(days=1)
+            if d.weekday() < 5:
+                out.append(d)
+        return out
+
+    def _session_utc(self, d: date) -> tuple:
+        base = datetime.combine(d, datetime.min.time(), tzinfo=ET)
+        return base.astimezone(UTC), (base + timedelta(hours=16)).astimezone(UTC)
+
+    def fetch_symbol(self, sym: str, start_d: date, end_d: date) -> pd.DataFrame:
         cfg = self.cfg
         rows = []
-        # business-day sessions in the window
-        sessions = pd.bdate_range(start_d, end_d).date
+        sessions = [d.date() for d in pd.bdate_range(start_d, end_d)]
+        n_days = 0
         for d in sessions:
-            forward = [e for e in expiries if e >= d]
-            if not forward:
-                continue
-            tgt = forward[0]
-            win_start = datetime.combine(d, datetime.min.time(), tzinfo=ET).astimezone(UTC)
-            win_end = datetime.combine(d, datetime.min.time(), tzinfo=ET).astimezone(UTC) + timedelta(hours=16)
-            und = self.underlying_minutes(sym, win_start, win_end)
+            s_utc, e_utc = self._session_utc(d)
+            und = self.underlying_minutes(sym, s_utc, e_utc)
             if und.empty:
                 continue
-            u_open = float(und["underlying"].iloc[0])
-            day_contracts = cdf[cdf["expiry"] == tgt]
+            spot = float(und["underlying"].iloc[0])
+            strikes = atm_and_band_strikes(spot, cfg.strike_band)
+            atm = min(strikes, key=lambda k: abs(k - spot))
+            target = None
+            for cand in self._candidate_expiries(d):
+                probe = self.option_minute_bidask(
+                    format_contract_symbol(sym, cand, atm, "call"), s_utc, e_utc)
+                if not probe.empty:
+                    target = cand
+                    break
+            if target is None:
+                continue
+            n_days += 1
             for right in ("call", "put"):
-                rc = day_contracts[day_contracts["right"] == right].copy()
-                if rc.empty:
-                    continue
-                rc["dist"] = (rc["strike"] - u_open).abs()
-                keep = rc.sort_values("dist").head(2 * cfg.strike_band + 1)
-                for _, c in keep.iterrows():
-                    mq = self.option_minute_quotes(c["contract_symbol"], win_start, win_end)
+                for K in strikes:
+                    mq = self.option_minute_bidask(
+                        format_contract_symbol(sym, target, K, right), s_utc, e_utc)
                     if mq.empty:
                         continue
-                    joined = mq.join(und, how="inner")
-                    joined = joined.dropna(subset=["bid", "ask", "underlying"])
+                    joined = mq.join(und, how="inner").dropna(subset=["bid", "ask", "underlying"])
                     if joined.empty:
                         continue
                     ts_et = joined.index.tz_convert(ET).tz_localize(None)
                     rows.append(pd.DataFrame({
                         "ts": ts_et, "symbol": sym, "right": right,
-                        "strike": float(c["strike"]), "expiry": tgt,
+                        "strike": float(K), "expiry": target,
                         "bid": joined["bid"].to_numpy(), "ask": joined["ask"].to_numpy(),
                         "underlying": joined["underlying"].to_numpy(),
                     }))
         if not rows:
+            self.log(f"  [alpaca] {sym}: no option data returned ({len(sessions)} sessions probed)")
             return pd.DataFrame()
-        return pd.concat(rows, ignore_index=True)
+        out = pd.concat(rows, ignore_index=True)
+        self.log(f"  [alpaca] {sym}: {len(out):,} contract-minutes over {n_days} sessions")
+        return out
+
+    def fetch_universe(self) -> pd.DataFrame:
+        cfg = self.cfg
+        end_d = datetime.now(ET).date()
+        start_d = end_d - timedelta(days=cfg.lookback_days)
+        parts = []
+        for sym in cfg.tickers:
+            try:
+                sdf = self.fetch_symbol(sym, start_d, end_d)
+            except Exception as e:
+                self.log(f"  [alpaca] {sym}: fetch failed: {type(e).__name__}: {e}")
+                continue
+            if not sdf.empty:
+                parts.append(sdf)
+        return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
 
 
-def fetch_universe(cfg, log=print) -> pd.DataFrame:
-    """Top-level entry: returns a contract-shaped frame, or empty on any failure."""
-    if not credentials_present():
-        log("  [alpaca] credentials/library unavailable — cannot fetch real quotes")
-        return pd.DataFrame()
+def fetch_universe(cfg, log=print) -> tuple:
+    """Return (contract_df, source_label). Empty df + '' on failure; the caller
+    then falls back to the labelled SIMULATED frame. Logs the concrete reason."""
+    reason = availability_reason()
+    if reason != "ok":
+        log(f"  [alpaca] cannot fetch real data — {reason}")
+        return pd.DataFrame(), ""
     try:
-        return AlpacaQuotesAdapter(cfg, log=log).fetch_universe()
+        adapter = AlpacaQuotesAdapter(cfg, log=log)
+        df = adapter.fetch_universe()
+        if df.empty:
+            return df, ""
+        label = SOURCE_REAL_BARS if adapter.used_bars_fallback else SOURCE_REAL_QUOTES
+        return df, label
     except Exception as e:  # pragma: no cover - defensive
         log(f"  [alpaca] fetch_universe failed: {type(e).__name__}: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), ""
