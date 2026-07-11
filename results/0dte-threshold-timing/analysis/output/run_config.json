@@ -1,0 +1,202 @@
+{
+  "universe": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "ORCL",
+    "AMD"
+  ],
+  "date_range": {
+    "start": "2025-07-11",
+    "end": "2026-07-10",
+    "n_sessions": 251
+  },
+  "thresholds_pct": [
+    20,
+    25,
+    30,
+    40,
+    50,
+    60,
+    70,
+    75,
+    80,
+    90,
+    100
+  ],
+  "entry_sweep": {
+    "start_min": 575,
+    "end_min": 930,
+    "step_min": 5
+  },
+  "fill_modes": [
+    "mid",
+    "market"
+  ],
+  "strike_band": 4,
+  "walk_forward": {
+    "train_weeks": 6,
+    "test_weeks": 2,
+    "expanding": false,
+    "max_exit_rule": [
+      "session_close",
+      null
+    ]
+  },
+  "detected_expiry_cadence": {
+    "AAPL": {
+      "n_expiries": 98,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "MSFT": {
+      "n_expiries": 97,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "NVDA": {
+      "n_expiries": 96,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "GOOGL": {
+      "n_expiries": 95,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "AMZN": {
+      "n_expiries": 98,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "META": {
+      "n_expiries": 97,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "TSLA": {
+      "n_expiries": 97,
+      "expiry_dows": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "ORCL": {
+      "n_expiries": 53,
+      "expiry_dows": [
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    },
+    "AMD": {
+      "n_expiries": 53,
+      "expiry_dows": [
+        "Thu",
+        "Fri"
+      ],
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
+    }
+  },
+  "row_counts": {
+    "AAPL": {
+      "rows": 1089191,
+      "instances": 405544,
+      "buckets": 2076
+    },
+    "MSFT": {
+      "rows": 903402,
+      "instances": 337534,
+      "buckets": 2080
+    },
+    "NVDA": {
+      "rows": 1145678,
+      "instances": 426314,
+      "buckets": 2080
+    },
+    "GOOGL": {
+      "rows": 853441,
+      "instances": 320402,
+      "buckets": 2076
+    },
+    "AMZN": {
+      "rows": 1021277,
+      "instances": 377564,
+      "buckets": 2076
+    },
+    "META": {
+      "rows": 924977,
+      "instances": 346920,
+      "buckets": 2072
+    },
+    "TSLA": {
+      "rows": 1533697,
+      "instances": 571632,
+      "buckets": 2080
+    },
+    "ORCL": {
+      "rows": 652826,
+      "instances": 245018,
+      "buckets": 1866
+    },
+    "AMD": {
+      "rows": 1016835,
+      "instances": 379314,
+      "buckets": 1872
+    }
+  },
+  "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread"
+}
