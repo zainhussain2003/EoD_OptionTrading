@@ -11,9 +11,9 @@
     "AMD"
   ],
   "date_range": {
-    "start": "2026-01-05",
-    "end": "2026-03-13",
-    "n_sessions": 50
+    "start": "2025-07-11",
+    "end": "2026-07-10",
+    "n_sessions": 251
   },
   "thresholds_pct": [
     20,
@@ -49,7 +49,7 @@
   },
   "detected_expiry_cadence": {
     "AAPL": {
-      "n_expiries": 50,
+      "n_expiries": 98,
       "expiry_dows": [
         "Mon",
         "Tue",
@@ -57,21 +57,23 @@
         "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "MSFT": {
-      "n_expiries": 30,
+      "n_expiries": 97,
       "expiry_dows": [
         "Mon",
+        "Tue",
         "Wed",
+        "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "NVDA": {
-      "n_expiries": 50,
+      "n_expiries": 96,
       "expiry_dows": [
         "Mon",
         "Tue",
@@ -79,21 +81,23 @@
         "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "GOOGL": {
-      "n_expiries": 30,
+      "n_expiries": 95,
       "expiry_dows": [
         "Mon",
+        "Tue",
         "Wed",
+        "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "AMZN": {
-      "n_expiries": 50,
+      "n_expiries": 98,
       "expiry_dows": [
         "Mon",
         "Tue",
@@ -101,11 +105,11 @@
         "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "META": {
-      "n_expiries": 50,
+      "n_expiries": 97,
       "expiry_dows": [
         "Mon",
         "Tue",
@@ -113,11 +117,11 @@
         "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "TSLA": {
-      "n_expiries": 50,
+      "n_expiries": 97,
       "expiry_dows": [
         "Mon",
         "Tue",
@@ -125,72 +129,74 @@
         "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-05",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "ORCL": {
-      "n_expiries": 10,
+      "n_expiries": 53,
       "expiry_dows": [
+        "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-09",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     },
     "AMD": {
-      "n_expiries": 10,
+      "n_expiries": 53,
       "expiry_dows": [
+        "Thu",
         "Fri"
       ],
-      "first_expiry": "2026-01-09",
-      "last_expiry": "2026-03-13"
+      "first_expiry": "2025-07-11",
+      "last_expiry": "2026-07-10"
     }
   },
   "row_counts": {
     "AAPL": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 1089191,
+      "instances": 405544,
+      "buckets": 2076
     },
     "MSFT": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 903402,
+      "instances": 337534,
+      "buckets": 2080
     },
     "NVDA": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 1145678,
+      "instances": 426314,
+      "buckets": 2080
     },
     "GOOGL": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 853441,
+      "instances": 320402,
+      "buckets": 2076
     },
     "AMZN": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 1021277,
+      "instances": 377564,
+      "buckets": 2076
     },
     "META": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 924977,
+      "instances": 346920,
+      "buckets": 2072
     },
     "TSLA": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 1533697,
+      "instances": 571632,
+      "buckets": 2080
     },
     "ORCL": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 652826,
+      "instances": 245018,
+      "buckets": 1866
     },
     "AMD": {
-      "rows": 39500,
-      "instances": 72000,
-      "buckets": 1040
+      "rows": 1016835,
+      "instances": 379314,
+      "buckets": 1872
     }
   },
-  "data_source": "SIMULATED (Black-Scholes) \u2014 NOT A REAL EDGE"
+  "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread"
 }

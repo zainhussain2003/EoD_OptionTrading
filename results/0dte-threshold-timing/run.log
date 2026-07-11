@@ -1,29 +1,38 @@
 === pip install ===
 
 === strategy stdout (exit 0) ===
-[data] ALPACA_API_KEY / ALPACA_SECRET_KEY not set — using SIMULATED fallback
-[sweep] entry-sweep + Modes A/B/C over 355,500 contract-minutes, per symbol …
-    AAPL: rows=   39500  instances=   72000  buckets=1040
-    MSFT: rows=   39500  instances=   72000  buckets=1040
-    NVDA: rows=   39500  instances=   72000  buckets=1040
-   GOOGL: rows=   39500  instances=   72000  buckets=1040
-    AMZN: rows=   39500  instances=   72000  buckets=1040
-    META: rows=   39500  instances=   72000  buckets=1040
-    TSLA: rows=   39500  instances=   72000  buckets=1040
-    ORCL: rows=   39500  instances=   72000  buckets=1040
-     AMD: rows=   39500  instances=   72000  buckets=1040
+[data] Alpaca credentials present — fetching real option data …
+  [alpaca] AAPL: 1,089,191 contract-minutes over 251 sessions
+  [alpaca] MSFT: 903,402 contract-minutes over 251 sessions
+  [alpaca] NVDA: 1,145,678 contract-minutes over 251 sessions
+  [alpaca] GOOGL: 853,441 contract-minutes over 251 sessions
+  [alpaca] AMZN: 1,021,277 contract-minutes over 251 sessions
+  [alpaca] META: 924,977 contract-minutes over 251 sessions
+  [alpaca] TSLA: 1,533,697 contract-minutes over 251 sessions
+  [alpaca] ORCL: 652,826 contract-minutes over 251 sessions
+  [alpaca] AMD: 1,016,835 contract-minutes over 250 sessions
+[sweep] entry-sweep + Modes A/B/C over 9,141,324 contract-minutes, per symbol …
+    AAPL: rows= 1089191  instances=  405544  buckets=2076
+    MSFT: rows=  903402  instances=  337534  buckets=2080
+    NVDA: rows= 1145678  instances=  426314  buckets=2080
+   GOOGL: rows=  853441  instances=  320402  buckets=2076
+    AMZN: rows= 1021277  instances=  377564  buckets=2076
+    META: rows=  924977  instances=  346920  buckets=2072
+    TSLA: rows= 1533697  instances=  571632  buckets=2080
+    ORCL: rows=  652826  instances=  245018  buckets=1866
+     AMD: rows= 1016835  instances=  379314  buckets=1872
 
 ==============================================================
   0DTE THRESHOLD-TIMING — done
-  data      : SIMULATED (Black-Scholes) — NOT A REAL EDGE
-  range     : 2026-01-05 → 2026-03-13  (50 sessions)
-  instances : 648,000   buckets: 9,360
-  validation: mid≥market=True regimes=True overlap_ok=True spotcheck=True
-  Mode C +ve market combos: 659
+  data      : REAL Alpaca option bars (last-trade close) + modeled spread
+  range     : 2025-07-11 → 2026-07-10  (251 sessions)
+  instances : 3,410,242   buckets: 18,278
+  validation: mid≥market=True regimes=False overlap_ok=True spotcheck=True
+  Mode C +ve market combos: 15
 ==============================================================
 
 ===STRATEGY_SUMMARY_JSON===
-{"status": "ok", "strategy": "0dte-threshold-timing", "data_source": "SIMULATED (Black-Scholes) \u2014 NOT A REAL EDGE", "date_range": {"start": "2026-01-05", "end": "2026-03-13", "n_sessions": 50}, "universe": ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "ORCL", "AMD"], "n_contract_minutes": 355500, "n_instances": 648000, "n_buckets": 9360, "mode_c_positive_market_combos": 659, "validation": {"mid_ge_market_ok": true, "mid_ge_market_violation_groups": 0, "mid_ge_market_instances_compared": 324000, "regimes_ok": true, "no_overlap_ok": true, "spot_check_ok": true}, "generated_at": "2026-07-11T03:53:20.120192+00:00"}
+{"status": "ok", "strategy": "0dte-threshold-timing", "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread", "date_range": {"start": "2025-07-11", "end": "2026-07-10", "n_sessions": 251}, "universe": ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "ORCL", "AMD"], "n_contract_minutes": 9141324, "n_instances": 3410242, "n_buckets": 18278, "mode_c_positive_market_combos": 15, "validation": {"mid_ge_market_ok": true, "mid_ge_market_violation_groups": 0, "mid_ge_market_instances_compared": 1705121, "regimes_ok": false, "no_overlap_ok": true, "spot_check_ok": true}, "generated_at": "2026-07-11T08:49:24.610602+00:00"}
 ===END_SUMMARY===
 
 === strategy stderr ===

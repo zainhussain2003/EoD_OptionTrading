@@ -1,8 +1,8 @@
 {
   "strategy": "0dte-threshold-timing",
-  "started_at": "2026-07-11T03:49:56.889668+00:00",
+  "started_at": "2026-07-11T04:11:10.868693+00:00",
   "strategy_ok": true,
   "returncode": 0,
   "metrics_status": "ok",
-  "finished_at": "2026-07-11T03:53:21.451290+00:00"
+  "finished_at": "2026-07-11T08:49:28.051244+00:00"
 }
