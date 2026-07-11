@@ -1,0 +1,8 @@
+{
+  "strategy": "mwf-concentration-capped",
+  "started_at": "2026-07-07T03:47:33.305342+00:00",
+  "strategy_ok": false,
+  "returncode": 1,
+  "metrics_status": "error",
+  "finished_at": "2026-07-07T03:53:49.598092+00:00"
+}

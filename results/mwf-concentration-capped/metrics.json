@@ -1,0 +1,6 @@
+{
+  "status": "error",
+  "strategy": "mwf-concentration-capped",
+  "error": "KeyError: 'rows'",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\actions-runner\\_work\\EoD_OptionTrading\\EoD_OptionTrading\\strategies\\mwf-concentration-capped\\strategy.py\", line 285, in main\n    metrics = build_metrics(all_results, MAX_SINGLE_TRADE_SHARE, TARGET_SPEND)\n  File \"C:\\actions-runner\\_work\\EoD_OptionTrading\\EoD_OptionTrading\\strategies\\mwf-concentration-capped\\strategy.py\", line 194, in build_metrics\n    all_rows.extend(res[\"rows\"])\n                    ~~~^^^^^^^^\nKeyError: 'rows'\n"
+}
