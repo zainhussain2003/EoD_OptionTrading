@@ -1,0 +1,8 @@
+{
+  "strategy": "friday_intraday_nonoverlap",
+  "started_at": "2026-07-10T01:07:40.717162+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-07-10T01:30:07.288784+00:00"
+}
