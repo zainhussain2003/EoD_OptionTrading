@@ -1,0 +1,139 @@
+"""
+Configuration for the Mon/Wed/Fri 0DTE option threshold-timing study.
+
+A DESCRIPTIVE historical study — no live trading, no orders. For each long option
+(call and put) we measure, over historical minute data, WHEN it reaches a ladder
+of profit thresholds and HOW LONG that exit window stays open.
+
+SCOPE (this variant): TRUE 0DTE ONLY — every trade is entered intraday and the
+option EXPIRES THAT SAME DAY — restricted to Monday / Wednesday / Friday. There
+are NO multi-day "bridge" holds. An equity that has no same-day Mon/Wed expiry
+(e.g. ORCL, AMD) simply contributes only its Friday 0DTE sessions.
+
+LOOKBACK is split BY EXPIRY WEEKDAY, because Friday weeklies have years of
+history while Monday/Wednesday single-name expiries are recent:
+  Friday  0DTE → friday_lookback_days   (default 730)
+  Mon/Wed 0DTE → monwed_lookback_days   (default 150)
+
+Everything a run needs is a plain dataclass field. Times are ET minutes-of-day
+(e.g. 09:35 = 575).
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+def _mod(h: int, m: int) -> int:
+    """ET hour:minute → minute-of-day."""
+    return h * 60 + m
+
+
+@dataclass
+class Config:
+    # ── Universe (Mag 7 + Oracle + AMD) ──────────────────────────────────────
+    tickers: list = field(default_factory=lambda: [
+        "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "ORCL", "AMD",
+    ])
+
+    # Expiry-cadence SANITY CHECK ONLY. Same-day-expiry availability is detected
+    # from the data itself (a symbol only gets Mon/Wed 0DTE if the data actually
+    # contains a same-day Mon/Wed expiry for it); these are just a reference.
+    daily_0dte_names: list = field(default_factory=lambda: [
+        "AAPL", "NVDA", "TSLA", "AMZN", "META",
+    ])
+    mon_wed_fri_names: list = field(default_factory=lambda: ["MSFT", "GOOGL"])
+    friday_weekly_names: list = field(default_factory=lambda: ["ORCL", "AMD"])
+
+    # ── 0DTE scope: expiry weekdays to include (Mon=0 … Fri=4) ───────────────
+    # Only sessions whose SAME-DAY expiry lands on one of these weekdays are
+    # analyzed. Tuesday/Thursday are excluded by construction.
+    expiry_dows: list = field(default_factory=lambda: [0, 2, 4])  # Mon, Wed, Fri
+
+    # ── History window, split by expiry weekday ──────────────────────────────
+    friday_lookback_days: int = 730     # Friday 0DTE — years of weekly history
+    monwed_lookback_days: int = 150     # Mon/Wed 0DTE — recent listings
+    timezone: str = "America/New_York"
+
+    # ── Threshold ladder T (percent) ─────────────────────────────────────────
+    # Reported as fractions internally (0.20 == +20%).
+    thresholds_pct: list = field(default_factory=lambda: [
+        20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100,
+    ])
+    # Targets the optimal-entry surface is ranked for.
+    optimal_entry_targets_pct: list = field(default_factory=lambda: [30, 50, 75, 100])
+    # Thresholds highlighted in the Mode-B narrative.
+    highlight_pct: list = field(default_factory=lambda: [20, 30, 50])
+
+    # ── Strike coverage per session ──────────────────────────────────────────
+    # We fetch ATM ± strike_band strikes for each right, enough to fill the
+    # ITM / ATM / OTM1 / OTM2+ moneyness buckets without pulling the whole chain.
+    strike_band: int = 4
+
+    # ── Entry sweep (ET minutes-of-day) ──────────────────────────────────────
+    entry_start_min: int = _mod(9, 35)   # 09:35 ET
+    entry_end_min: int = _mod(15, 30)    # 15:30 ET (inclusive)
+    entry_step_min: int = 5              # candidate entry every 5 minutes
+    session_close_min: int = _mod(16, 0)  # 16:00 ET — path built to here
+
+    # entry_bucket granularity for grouping / optimizer windows (minutes).
+    entry_bucket_min: int = 30
+
+    # ── Fill modes (run BOTH) ────────────────────────────────────────────────
+    #   mid    : mark = (bid+ask)/2, entry at mid.
+    #   market : open at ask, close at bid  (long-option realism).
+    fill_modes: list = field(default_factory=lambda: ["mid", "market"])
+
+    # ── Mode C walk-forward ──────────────────────────────────────────────────
+    train_weeks: int = 6
+    test_weeks: int = 2
+    expanding_window: bool = False      # False = rolling train window
+    # MAX_EXIT_TIME: default = session close (hold to end if never hit).
+    # Alternatives: ("fixed_minutes", N) or ("median_last_hold", None).
+    max_exit_rule: tuple = ("session_close", None)
+    min_test_trades: int = 30           # combos below this flagged unreliable
+
+    # ── Guardrails ───────────────────────────────────────────────────────────
+    min_bucket_n: int = 30              # buckets below this flagged low-sample
+
+    # ── Data contract column names (configurable adapter target) ─────────────
+    col_ts: str = "ts"
+    col_symbol: str = "symbol"
+    col_right: str = "right"
+    col_strike: str = "strike"
+    col_expiry: str = "expiry"
+    col_bid: str = "bid"
+    col_ask: str = "ask"
+    col_underlying: str = "underlying"
+
+    # ── Alpaca (paper / market-data, read-only) ──────────────────────────────
+    alpaca_paper: bool = True
+    option_feed: str = "indicative"     # historical option-quote feed
+    risk_free_rate: float = 0.05        # kept for fetcher compatibility
+
+    # ── Reproducibility ──────────────────────────────────────────────────────
+    random_seed: int = 7
+
+    # ── Convenience ──────────────────────────────────────────────────────────
+    @property
+    def thresholds(self) -> list:
+        """Threshold ladder as fractions (0.20, 0.25, …)."""
+        return [t / 100.0 for t in self.thresholds_pct]
+
+    @property
+    def entry_grid(self) -> list:
+        """The 5-min candidate-entry minutes-of-day."""
+        return list(range(self.entry_start_min, self.entry_end_min + 1, self.entry_step_min))
+
+    @property
+    def max_lookback_days(self) -> int:
+        """The widest window we ever fetch (Friday's)."""
+        return max(self.friday_lookback_days, self.monwed_lookback_days)
+
+    def lookback_for_dow(self, weekday: int) -> int:
+        """Lookback (days) for a given expiry weekday. Friday=4 gets the long
+        window; Monday=0 / Wednesday=2 get the short one; anything else 0."""
+        if weekday == 4:
+            return self.friday_lookback_days
+        if weekday in (0, 2):
+            return self.monwed_lookback_days
+        return 0
