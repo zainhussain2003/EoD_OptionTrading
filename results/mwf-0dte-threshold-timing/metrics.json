@@ -1,0 +1,34 @@
+{
+  "status": "ok",
+  "strategy": "mwf-0dte-threshold-timing",
+  "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread",
+  "date_range": {
+    "start": "2024-07-12",
+    "end": "2026-07-10",
+    "n_sessions": 141
+  },
+  "universe": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "ORCL",
+    "AMD"
+  ],
+  "n_contract_minutes": 4233682,
+  "n_instances": 1590782,
+  "n_buckets": 4784,
+  "mode_c_positive_market_combos": 121,
+  "validation": {
+    "mid_ge_market_ok": true,
+    "mid_ge_market_violation_groups": 0,
+    "mid_ge_market_instances_compared": 795391,
+    "regimes_ok": true,
+    "no_overlap_ok": true,
+    "spot_check_ok": true
+  },
+  "generated_at": "2026-07-12T00:29:30.452081+00:00"
+}

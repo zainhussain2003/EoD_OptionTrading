@@ -1,0 +1,39 @@
+=== pip install ===
+
+=== strategy stdout (exit 0) ===
+[data] Alpaca credentials present — fetching real 0DTE option data …
+  [alpaca] AAPL: 552,877 contract-minutes over 141 0DTE sessions [source=bars]
+  [alpaca] MSFT: 494,869 contract-minutes over 138 0DTE sessions [source=bars]
+  [alpaca] NVDA: 550,956 contract-minutes over 138 0DTE sessions [source=bars]
+  [alpaca] GOOGL: 368,922 contract-minutes over 139 0DTE sessions [source=bars]
+  [alpaca] AMZN: 497,385 contract-minutes over 139 0DTE sessions [source=bars]
+  [alpaca] META: 502,064 contract-minutes over 140 0DTE sessions [source=bars]
+  [alpaca] TSLA: 820,122 contract-minutes over 139 0DTE sessions [source=bars]
+  [alpaca] ORCL: 153,359 contract-minutes over 100 0DTE sessions [source=bars]
+  [alpaca] AMD: 293,128 contract-minutes over 98 0DTE sessions [source=bars]
+[sweep] entry-sweep + Modes A/B/C over 4,233,682 contract-minutes, per symbol …
+    AAPL: rows=  552877  instances=  207816  buckets= 624
+    MSFT: rows=  494869  instances=  186100  buckets= 624
+    NVDA: rows=  550956  instances=  206016  buckets= 624
+   GOOGL: rows=  368922  instances=  139108  buckets= 624
+    AMZN: rows=  497385  instances=  186796  buckets= 624
+    META: rows=  502064  instances=  189732  buckets= 624
+    TSLA: rows=  820122  instances=  307352  buckets= 624
+    ORCL: rows=  153359  instances=   57876  buckets= 208
+     AMD: rows=  293128  instances=  109986  buckets= 208
+
+==============================================================
+  MWF 0DTE THRESHOLD-TIMING — done
+  data      : REAL Alpaca option bars (last-trade close) + modeled spread
+  range     : 2024-07-12 → 2026-07-10  (141 sessions)
+  instances : 1,590,782   buckets: 4,784
+  validation: mid≥market=True regimes=True overlap_ok=True spotcheck=True
+  Mode C +ve market combos: 121
+==============================================================
+
+===STRATEGY_SUMMARY_JSON===
+{"status": "ok", "strategy": "mwf-0dte-threshold-timing", "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread", "date_range": {"start": "2024-07-12", "end": "2026-07-10", "n_sessions": 141}, "universe": ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "ORCL", "AMD"], "n_contract_minutes": 4233682, "n_instances": 1590782, "n_buckets": 4784, "mode_c_positive_market_combos": 121, "validation": {"mid_ge_market_ok": true, "mid_ge_market_violation_groups": 0, "mid_ge_market_instances_compared": 795391, "regimes_ok": true, "no_overlap_ok": true, "spot_check_ok": true}, "generated_at": "2026-07-12T00:29:30.452081+00:00"}
+===END_SUMMARY===
+
+=== strategy stderr ===
+

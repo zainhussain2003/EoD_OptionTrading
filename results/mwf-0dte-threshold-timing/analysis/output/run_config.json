@@ -1,0 +1,251 @@
+{
+  "scope": "TRUE 0DTE only (same-day expiry), Mon/Wed/Fri; no bridges",
+  "universe": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "ORCL",
+    "AMD"
+  ],
+  "expiry_dows": [
+    "Mon",
+    "Wed",
+    "Fri"
+  ],
+  "lookback_days": {
+    "friday": 730,
+    "mon_wed": 150
+  },
+  "date_range": {
+    "start": "2024-07-12",
+    "end": "2026-07-10",
+    "n_sessions": 141
+  },
+  "thresholds_pct": [
+    20,
+    25,
+    30,
+    40,
+    50,
+    60,
+    70,
+    75,
+    80,
+    90,
+    100
+  ],
+  "entry_sweep": {
+    "start_min": 575,
+    "end_min": 930,
+    "step_min": 5
+  },
+  "fill_modes": [
+    "mid",
+    "market"
+  ],
+  "strike_band": 4,
+  "walk_forward": {
+    "train_weeks": 6,
+    "test_weeks": 2,
+    "expanding": false,
+    "sessions_per_week": 1,
+    "max_exit_rule": [
+      "session_close",
+      null
+    ]
+  },
+  "detected_expiry_cadence": {
+    "AAPL": {
+      "n_expiries": 141,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "MSFT": {
+      "n_expiries": 138,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "NVDA": {
+      "n_expiries": 138,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "GOOGL": {
+      "n_expiries": 139,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "AMZN": {
+      "n_expiries": 139,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "META": {
+      "n_expiries": 140,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "TSLA": {
+      "n_expiries": 139,
+      "expiry_dows": [
+        "Mon",
+        "Wed",
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "ORCL": {
+      "n_expiries": 100,
+      "expiry_dows": [
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    },
+    "AMD": {
+      "n_expiries": 98,
+      "expiry_dows": [
+        "Fri"
+      ],
+      "first_expiry": "2024-07-12",
+      "last_expiry": "2026-07-10"
+    }
+  },
+  "per_symbol_data_source": {
+    "AAPL": "bars",
+    "MSFT": "bars",
+    "NVDA": "bars",
+    "GOOGL": "bars",
+    "AMZN": "bars",
+    "META": "bars",
+    "TSLA": "bars",
+    "ORCL": "bars",
+    "AMD": "bars"
+  },
+  "per_symbol_dow_sessions": {
+    "AAPL": {
+      "Fri": 100,
+      "Mon": 19,
+      "Wed": 22
+    },
+    "MSFT": {
+      "Fri": 98,
+      "Mon": 19,
+      "Wed": 21
+    },
+    "NVDA": {
+      "Fri": 99,
+      "Mon": 19,
+      "Wed": 20
+    },
+    "GOOGL": {
+      "Fri": 100,
+      "Mon": 19,
+      "Wed": 20
+    },
+    "AMZN": {
+      "Fri": 98,
+      "Mon": 19,
+      "Wed": 22
+    },
+    "META": {
+      "Fri": 100,
+      "Mon": 19,
+      "Wed": 21
+    },
+    "TSLA": {
+      "Fri": 99,
+      "Mon": 19,
+      "Wed": 21
+    },
+    "ORCL": {
+      "Fri": 100
+    },
+    "AMD": {
+      "Fri": 98
+    }
+  },
+  "row_counts": {
+    "AAPL": {
+      "rows": 552877,
+      "instances": 207816,
+      "buckets": 624
+    },
+    "MSFT": {
+      "rows": 494869,
+      "instances": 186100,
+      "buckets": 624
+    },
+    "NVDA": {
+      "rows": 550956,
+      "instances": 206016,
+      "buckets": 624
+    },
+    "GOOGL": {
+      "rows": 368922,
+      "instances": 139108,
+      "buckets": 624
+    },
+    "AMZN": {
+      "rows": 497385,
+      "instances": 186796,
+      "buckets": 624
+    },
+    "META": {
+      "rows": 502064,
+      "instances": 189732,
+      "buckets": 624
+    },
+    "TSLA": {
+      "rows": 820122,
+      "instances": 307352,
+      "buckets": 624
+    },
+    "ORCL": {
+      "rows": 153359,
+      "instances": 57876,
+      "buckets": 208
+    },
+    "AMD": {
+      "rows": 293128,
+      "instances": 109986,
+      "buckets": 208
+    }
+  },
+  "data_source": "REAL Alpaca option bars (last-trade close) + modeled spread"
+}

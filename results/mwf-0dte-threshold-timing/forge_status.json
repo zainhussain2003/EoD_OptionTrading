@@ -1,0 +1,8 @@
+{
+  "strategy": "mwf-0dte-threshold-timing",
+  "started_at": "2026-07-11T22:21:33.610985+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-07-12T00:29:30.881119+00:00"
+}
