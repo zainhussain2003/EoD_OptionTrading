@@ -1,0 +1,53 @@
+"# Backtest method: MAX EXPECTED PROFIT, target-spend sized (win_rate × avg_payoff)  (CALLs)"
+"# Position sizing: contracts = ceil($1.00 / mean(entry_frame)), min 1. Frames are arbitrary [start, end] windows; price = mean of the 1-min closes inside the frame."
+# Lookback = 150 calendar days
+# Session window = 9:30AM–4:00PM ET (full regular session)
+# Generated 2026-07-14 11:45:52  |  data source: Alpaca Markets API
+# P&L $ assumes 1 contract = 100 shares
+# Optimal entry frame = 12:08–12:13 PM  |  Optimal exit frame = 2:14–2:19 PM
+
+DETAIL — one row per Tuesday (ATM call at the optimal frames)
+date,opt_type,contract_symbol,strike,source,entry_frame,entry_price,exit_frame,exit_price,payoff_per_share,contracts,cost_dollars,pnl_dollars,profitable,note
+2026-02-17,C,META260218C00635000,635.0,REAL,12:08–12:13 PM,6.7133,2:14–2:19 PM,9.18,2.4667,1,671.33,246.67,True,1DTE (Wed expiry)
+2026-02-24,C,META260225C00630000,630.0,REAL,12:08–12:13 PM,,2:14–2:19 PM,,,,,,,no usable price in entry/exit frame
+2026-03-03,C,META260304C00650000,650.0,REAL,12:08–12:13 PM,7.175,2:14–2:19 PM,9.37,2.195,1,717.5,219.5,True,1DTE (Wed expiry)
+2026-03-10,C,META260311C00655000,655.0,REAL,12:08–12:13 PM,6.09,2:14–2:19 PM,6.2167,0.1267,1,609.0,12.67,True,1DTE (Wed expiry)
+2026-03-17,C,META260318C00630000,630.0,REAL,12:08–12:13 PM,3.018,2:14–2:19 PM,2.224,-0.794,1,301.8,-79.4,False,1DTE (Wed expiry)
+2026-03-24,C,META260325C00600000,600.0,REAL,12:08–12:13 PM,2.515,2:14–2:19 PM,2.5675,0.0525,1,251.5,5.25,True,1DTE (Wed expiry)
+2026-03-31,C,META260401C00550000,550.0,REAL,12:08–12:13 PM,12.2133,2:14–2:19 PM,21.4,9.1867,1,1221.33,918.67,True,1DTE (Wed expiry)
+2026-04-07,C,META260408C00570000,570.0,REAL,12:08–12:13 PM,,2:14–2:19 PM,,,,,,,no usable price in entry/exit frame
+2026-04-14,C,META260415C00640000,640.0,REAL,12:08–12:13 PM,,2:14–2:19 PM,,,,,,,no usable price in entry/exit frame
+2026-04-21,C,META260422C00670000,670.0,REAL,12:08–12:13 PM,6.026,2:14–2:19 PM,6.688,0.662,1,602.6,66.2,True,1DTE (Wed expiry)
+2026-04-28,C,META260429C00670000,670.0,SIM,12:08–12:13 PM,6.0492,2:14–2:19 PM,7.386,1.3368,1,604.92,133.68,True,1DTE (Wed expiry)
+2026-05-05,C,META260506C00615000,615.0,REAL,12:08–12:13 PM,0.834,2:14–2:19 PM,1.065,0.231,2,166.8,46.2,True,1DTE (Wed expiry)
+2026-05-12,C,META260513C00595000,595.0,REAL,12:08–12:13 PM,,2:14–2:19 PM,,,,,,,no usable price in entry/exit frame
+2026-05-19,C,META260520C00610000,610.0,REAL,12:08–12:13 PM,2.296,2:14–2:19 PM,1.776,-0.52,1,229.6,-52.0,False,1DTE (Wed expiry)
+2026-05-26,C,META260527C00610000,610.0,REAL,12:08–12:13 PM,4.086,2:14–2:19 PM,4.09,0.004,1,408.6,0.4,True,1DTE (Wed expiry)
+2026-06-02,C,META260603C00600000,600.0,REAL,12:08–12:13 PM,,2:14–2:19 PM,,,,,,,no usable price in entry/exit frame
+2026-06-09,C,META260610C00590000,590.0,REAL,12:08–12:13 PM,4.1375,2:14–2:19 PM,4.375,0.2375,1,413.75,23.75,True,1DTE (Wed expiry)
+2026-06-16,C,META260617C00595000,595.0,REAL,12:08–12:13 PM,5.41,2:14–2:19 PM,6.126,0.716,1,541.0,71.6,True,1DTE (Wed expiry)
+2026-06-23,C,META260624C00565000,565.0,REAL,12:08–12:13 PM,4.074,2:14–2:19 PM,4.162,0.088,1,407.4,8.8,True,1DTE (Wed expiry)
+2026-06-30,C,META260701C00560000,560.0,REAL,12:08–12:13 PM,3.844,2:14–2:19 PM,5.438,1.594,1,384.4,159.4,True,1DTE (Wed expiry)
+2026-07-07,C,META260708C00605000,605.0,REAL,12:08–12:13 PM,5.896,2:14–2:19 PM,15.73,9.834,1,589.6,983.4,True,1DTE (Wed expiry)
+
+SUMMARY — optimal frames
+opt_type,optimal_entry_frame,optimal_exit_frame,trades,wins,win_rate,total_pnl_dollars,avg_pnl_dollars,best_day,worst_day,skipped_no_data,premium_spent,return_on_spend
+CALL,12:08–12:13 PM,2:14–2:19 PM,16,14,0.8750,2764.79,172.8,983.4,-79.4,5,8121.13,0.3404
+
+TOP 15 FRAME PAIRS (by win_rate × avg payoff)
+rank,entry_frame,exit_frame,trades,wins,win_rate,avg_pnl_dollars,total_pnl_dollars
+1,12:05–12:10 PM,2:15–2:20 PM,17,14,0.8235,164.43,2795.23
+2,12:00–12:15 PM,2:15–2:20 PM,17,13,0.7647,161.76,2749.84
+3,12:10–12:15 PM,2:15–2:20 PM,17,12,0.7059,171.84,2921.22
+4,12:00–12:10 PM,2:15–2:20 PM,17,13,0.7647,157.21,2672.49
+5,12:05–12:15 PM,2:15–2:20 PM,17,12,0.7059,167.86,2853.67
+6,12:10–12:20 PM,2:15–2:20 PM,17,12,0.7059,165.22,2808.82
+7,12:10–12:25 PM,2:15–2:20 PM,17,12,0.7059,162.77,2767.17
+8,12:05–12:10 PM,2:15–2:25 PM,18,13,0.7222,153.4,2761.23
+9,12:05–12:10 PM,2:00–2:05 PM,16,13,0.8125,135.92,2174.7
+10,12:10–12:15 PM,2:00–2:05 PM,16,12,0.7500,146.46,2343.43
+11,12:05–12:15 PM,2:20–2:25 PM,18,12,0.6667,163.83,2949.02
+12,12:05–12:10 PM,2:20–2:25 PM,18,12,0.6667,162.13,2918.42
+13,12:00–12:10 PM,2:10–2:25 PM,18,14,0.7778,138.54,2493.8
+14,12:05–12:15 PM,2:05–2:20 PM,20,16,0.8000,133.66,2673.23
+15,12:05–12:20 PM,2:15–2:20 PM,17,11,0.6471,165.04,2805.68
