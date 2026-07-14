@@ -1,0 +1,53 @@
+"# Backtest method: Wednesday intraday — MAX EXPECTED PROFIT, target-spend sized (win_rate × avg_payoff)  (CALLs)"
+"# Wednesday entry → Wednesday expiry, lookback 150d, tickers AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA."
+# Lookback = 150 calendar days
+# Session window = 9:30AM–4:00PM ET (full regular session)
+# Generated 2026-07-14 14:04:11  |  data source: Alpaca Markets API
+# P&L $ assumes 1 contract = 100 shares
+# Optimal entry frame = 9:30–9:36 AM  |  Optimal exit frame = 3:46–3:51 PM
+
+DETAIL — one row per session (ATM call at the optimal frames)
+date,opt_type,contract_symbol,strike,source,entry_frame,entry_price,exit_frame,exit_price,payoff_per_share,contracts,cost_dollars,pnl_dollars,profitable,note
+2026-02-18,C,MSFT260218C00397500,397.5,REAL,9:30–9:36 AM,2.2133,3:46–3:51 PM,2.7267,0.5133,1,221.33,51.33,True,0DTE (same-day expiry)
+2026-02-25,C,MSFT260225C00392500,392.5,REAL,9:30–9:36 AM,2.265,3:46–3:51 PM,7.665,5.4,1,226.5,540.0,True,0DTE (same-day expiry)
+2026-03-04,C,MSFT260304C00402500,402.5,REAL,9:30–9:36 AM,3.7267,3:46–3:51 PM,4.3525,0.6258,1,372.67,62.58,True,0DTE (same-day expiry)
+2026-03-11,C,MSFT260311C00407500,407.5,REAL,9:30–9:36 AM,,3:46–3:51 PM,,,,,,,no usable price in entry/exit frame
+2026-03-18,C,MSFT260318C00395000,395.0,REAL,9:30–9:36 AM,2.8567,3:46–3:51 PM,0.01,-2.8467,1,285.67,-284.67,False,0DTE (same-day expiry)
+2026-03-25,C,MSFT260325C00375000,375.0,REAL,9:30–9:36 AM,,3:46–3:51 PM,,,,,,,no usable price in entry/exit frame
+2026-04-01,C,MSFT260401C00372500,372.5,REAL,9:30–9:36 AM,1.8617,3:46–3:51 PM,0.01,-1.8517,1,186.17,-185.17,False,0DTE (same-day expiry)
+2026-04-08,C,MSFT260408C00382500,382.5,REAL,9:30–9:36 AM,,3:46–3:51 PM,,,,,,,no usable price in entry/exit frame
+2026-04-15,C,MSFT260415C00397500,397.5,REAL,9:30–9:36 AM,2.8967,3:46–3:51 PM,14.5525,11.6558,1,289.67,1165.58,True,0DTE (same-day expiry)
+2026-04-22,C,MSFT260422C00425000,425.0,REAL,9:30–9:36 AM,2.2,3:46–3:51 PM,7.73,5.53,1,220.0,553.0,True,0DTE (same-day expiry)
+2026-04-29,C,MSFT260429C00422500,422.5,SIM,9:30–9:36 AM,4.1248,3:46–3:51 PM,1.4984,-2.6264,1,412.48,-262.64,False,0DTE (same-day expiry)
+2026-05-06,C,MSFT260506C00405000,405.0,REAL,9:30–9:36 AM,3.0583,3:46–3:51 PM,8.4,5.3417,1,305.83,534.17,True,0DTE (same-day expiry)
+2026-05-13,C,MSFT260513C00402500,402.5,REAL,9:30–9:36 AM,2.55,3:46–3:51 PM,2.83,0.28,1,255.0,28.0,True,0DTE (same-day expiry)
+2026-05-20,C,MSFT260520C00415000,415.0,REAL,9:30–9:36 AM,2.285,3:46–3:51 PM,6.085,3.8,1,228.5,380.0,True,0DTE (same-day expiry)
+2026-05-27,C,MSFT260527C00410000,410.0,REAL,9:30–9:36 AM,2.8767,3:46–3:51 PM,3.3333,0.4567,1,287.67,45.67,True,0DTE (same-day expiry)
+2026-06-03,C,MSFT260603C00437500,437.5,REAL,9:30–9:36 AM,,3:46–3:51 PM,,,,,,,no usable price in entry/exit frame
+2026-06-10,C,MSFT260610C00400000,400.0,REAL,9:30–9:36 AM,2.1367,3:46–3:51 PM,0.294,-1.8427,1,213.67,-184.27,False,0DTE (same-day expiry)
+2026-06-17,C,MSFT260617C00390000,390.0,REAL,9:30–9:36 AM,1.53,3:46–3:51 PM,0.01,-1.52,1,153.0,-152.0,False,0DTE (same-day expiry)
+2026-06-24,C,MSFT260624C00372500,372.5,REAL,9:30–9:36 AM,3.625,3:46–3:51 PM,0.01,-3.615,1,362.5,-361.5,False,0DTE (same-day expiry)
+2026-07-01,C,MSFT260701C00380000,380.0,REAL,9:30–9:36 AM,2.2717,3:46–3:51 PM,5.378,3.1063,1,227.17,310.63,True,0DTE (same-day expiry)
+2026-07-08,C,MSFT260708C00382500,382.5,REAL,9:30–9:36 AM,2.925,3:46–3:51 PM,1.072,-1.853,1,292.5,-185.3,False,0DTE (same-day expiry)
+
+SUMMARY — optimal frames
+opt_type,optimal_entry_frame,optimal_exit_frame,trades,wins,win_rate,total_pnl_dollars,avg_pnl_dollars,best_day,worst_day,skipped_no_data,premium_spent,return_on_spend
+CALL,9:30–9:36 AM,3:46–3:51 PM,17,10,0.5882,2055.41,120.91,1165.58,-361.5,4,4540.33,0.4527
+
+TOP 15 FRAME PAIRS (by win_rate × avg payoff)
+rank,entry_frame,exit_frame,trades,wins,win_rate,avg_pnl_dollars,total_pnl_dollars
+1,9:30–9:35 AM,3:45–3:50 PM,18,10,0.5556,100.68,1812.29
+2,9:30–9:40 AM,3:45–3:50 PM,18,10,0.5556,90.86,1635.52
+3,9:30–9:45 AM,3:45–3:50 PM,18,10,0.5556,83.44,1501.97
+4,9:30–9:50 AM,3:45–3:50 PM,18,10,0.5556,81.61,1468.96
+5,9:35–9:40 AM,3:45–3:50 PM,18,10,0.5556,81.04,1458.75
+6,9:45–9:50 AM,11:00–11:05 AM,21,12,0.5714,75.77,1591.16
+7,9:35–9:45 AM,3:45–3:50 PM,18,10,0.5556,74.82,1346.82
+8,9:30–10:00 AM,3:45–3:50 PM,18,10,0.5556,73.75,1327.5
+9,9:45–9:50 AM,10:55–11:05 AM,21,12,0.5714,70.62,1483.05
+10,9:35–9:55 AM,3:45–3:50 PM,18,10,0.5556,72.48,1304.56
+11,9:30–9:40 AM,2:15–2:25 PM,20,9,0.4500,87.42,1748.43
+12,9:45–9:50 AM,11:00–11:10 AM,21,12,0.5714,68.15,1431.18
+13,9:45–9:50 AM,10:55–11:10 AM,21,12,0.5714,67.88,1425.54
+14,9:30–9:35 AM,2:40–2:50 PM,20,9,0.4500,86.19,1723.75
+15,9:30–9:35 AM,12:05–12:25 PM,21,11,0.5238,74.01,1554.26
