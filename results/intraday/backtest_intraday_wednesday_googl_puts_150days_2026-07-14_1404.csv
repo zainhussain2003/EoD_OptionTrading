@@ -1,0 +1,53 @@
+"# Backtest method: Wednesday intraday — MAX EXPECTED PROFIT, target-spend sized (win_rate × avg_payoff)  (PUTs)"
+"# Wednesday entry → Wednesday expiry, lookback 150d, tickers AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA."
+# Lookback = 150 calendar days
+# Session window = 9:30AM–4:00PM ET (full regular session)
+# Generated 2026-07-14 14:04:18  |  data source: Alpaca Markets API
+# P&L $ assumes 1 contract = 100 shares
+# Optimal entry frame = 2:05–2:10 PM  |  Optimal exit frame = 2:29–2:35 PM
+
+DETAIL — one row per session (ATM put at the optimal frames)
+date,opt_type,contract_symbol,strike,source,entry_frame,entry_price,exit_frame,exit_price,payoff_per_share,contracts,cost_dollars,pnl_dollars,profitable,note
+2026-02-18,P,GOOGL260218P00302500,302.5,REAL,2:05–2:10 PM,0.19,2:29–2:35 PM,0.406,0.216,6,114.0,129.6,True,0DTE (same-day expiry)
+2026-02-25,P,GOOGL260225P00310000,310.0,REAL,2:05–2:10 PM,0.4725,2:29–2:35 PM,0.334,-0.1385,3,141.75,-41.55,False,0DTE (same-day expiry)
+2026-03-04,P,GOOGL260304P00302500,302.5,REAL,2:05–2:10 PM,0.3475,2:29–2:35 PM,0.4333,0.0858,3,104.25,25.75,True,0DTE (same-day expiry)
+2026-03-11,P,GOOGL260311P00305000,305.0,REAL,2:05–2:10 PM,0.05,2:29–2:35 PM,0.02,-0.03,21,105.0,-63.0,False,0DTE (same-day expiry)
+2026-03-18,P,GOOGL260318P00310000,310.0,REAL,2:05–2:10 PM,0.9933,2:29–2:35 PM,1.9575,0.9642,2,198.67,192.83,True,0DTE (same-day expiry)
+2026-03-25,P,GOOGL260325P00292500,292.5,REAL,2:05–2:10 PM,2.005,2:29–2:35 PM,2.395,0.39,1,200.5,39.0,True,0DTE (same-day expiry)
+2026-04-01,P,GOOGL260401P00292500,292.5,REAL,2:05–2:10 PM,0.01,2:29–2:35 PM,0.0275,0.0175,101,101.0,176.75,True,0DTE (same-day expiry)
+2026-04-08,P,GOOGL260408P00320000,320.0,REAL,2:05–2:10 PM,1.446,2:29–2:35 PM,1.52,0.074,1,144.6,7.4,True,0DTE (same-day expiry)
+2026-04-15,P,GOOGL260415P00332500,332.5,REAL,2:05–2:10 PM,0.02,2:29–2:35 PM,0.0233,0.0033,50,100.0,16.67,True,0DTE (same-day expiry)
+2026-04-22,P,GOOGL260422P00335000,335.0,REAL,2:05–2:10 PM,0.0533,2:29–2:35 PM,0.0375,-0.0158,19,101.33,-30.08,False,0DTE (same-day expiry)
+2026-04-29,P,GOOGL260429P00345000,345.0,SIM,2:05–2:10 PM,0.4731,2:29–2:35 PM,0.2423,-0.2308,3,141.92,-69.24,False,0DTE (same-day expiry)
+2026-05-06,P,GOOGL260506P00392500,392.5,REAL,2:05–2:10 PM,0.0525,2:29–2:35 PM,0.0533,0.0008,20,105.0,1.67,True,0DTE (same-day expiry)
+2026-05-13,P,GOOGL260513P00385000,385.0,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+2026-05-20,P,GOOGL260520P00390000,390.0,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+2026-05-27,P,GOOGL260527P00387500,387.5,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+2026-06-03,P,GOOGL260603P00365000,365.0,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+2026-06-10,P,GOOGL260610P00362500,362.5,REAL,2:05–2:10 PM,5.51,2:29–2:35 PM,6.455,0.945,1,551.0,94.5,True,0DTE (same-day expiry)
+2026-06-17,P,GOOGL260617P00372500,372.5,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+2026-06-24,P,GOOGL260624P00350000,350.0,REAL,2:05–2:10 PM,1.455,2:29–2:35 PM,5.9,4.445,1,145.5,444.5,True,0DTE (same-day expiry)
+2026-07-01,P,GOOGL260701P00360000,360.0,REAL,2:05–2:10 PM,0.7675,2:29–2:35 PM,0.9067,0.1392,2,153.5,27.83,True,0DTE (same-day expiry)
+2026-07-08,P,GOOGL260708P00365000,365.0,REAL,2:05–2:10 PM,,2:29–2:35 PM,,,,,,,no usable price in entry/exit frame
+
+SUMMARY — optimal frames
+opt_type,optimal_entry_frame,optimal_exit_frame,trades,wins,win_rate,total_pnl_dollars,avg_pnl_dollars,best_day,worst_day,skipped_no_data,premium_spent,return_on_spend
+PUT,2:05–2:10 PM,2:29–2:35 PM,15,11,0.7333,952.63,63.51,444.5,-69.24,6,2408.02,0.3956
+
+TOP 15 FRAME PAIRS (by win_rate × avg payoff)
+rank,entry_frame,exit_frame,trades,wins,win_rate,avg_pnl_dollars,total_pnl_dollars
+1,2:05–2:10 PM,2:30–2:35 PM,15,11,0.7333,62.84,942.63
+2,10:50–10:55 AM,3:05–3:10 PM,16,6,0.3750,122.49,1959.9
+3,11:05–11:10 AM,3:10–3:15 PM,17,8,0.4706,95.65,1626.0
+4,10:50–10:55 AM,3:10–3:15 PM,16,7,0.4375,102.08,1633.33
+5,10:50–10:55 AM,2:30–2:35 PM,14,5,0.3571,122.56,1715.88
+6,11:05–11:10 AM,3:05–3:10 PM,17,7,0.4118,101.26,1721.41
+7,12:55–1:00 PM,2:55–3:00 PM,15,8,0.5333,76.97,1154.55
+8,10:50–10:55 AM,3:05–3:15 PM,17,7,0.4118,98.17,1668.91
+9,10:55–11:10 AM,3:05–3:10 PM,17,7,0.4118,97.84,1663.25
+10,12:05–12:25 PM,3:05–3:10 PM,17,9,0.5294,75.51,1283.59
+11,2:05–2:10 PM,2:25–2:35 PM,17,12,0.7059,56.52,960.88
+12,2:05–2:10 PM,2:55–3:00 PM,16,9,0.5625,70.87,1133.86
+13,10:55–11:05 AM,3:05–3:10 PM,17,7,0.4118,96.5,1640.51
+14,2:05–2:15 PM,2:30–2:35 PM,15,11,0.7333,54.08,811.21
+15,12:20–12:25 PM,3:05–3:10 PM,16,8,0.5000,79.26,1268.16
