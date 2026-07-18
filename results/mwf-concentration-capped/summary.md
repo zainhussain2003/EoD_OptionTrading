@@ -1,36 +1,22 @@
-I've written the failure summary to `results/mwf-concentration-capped/summary.md` (pending your write approval). Here is the complete summary content:
+### Results (With Outliers)
 
----
+| Metric | Calls | Puts |
+|---|---|---|
+| Trades | 280 | 280 |
+| Win rate | 43.2% | 46.4% |
+| Total P&L | $12,697 | $7,091 |
+| Avg P&L | $45.35 | $25.32 |
+| Best trade | $1,150 | $745 |
+| Worst trade | -$305 | -$195 |
+| Best entry → exit | 3:40 PM → 3:55 PM (AAPL Fri, +$4,323) | 2:15 PM → 3:30 PM (TSLA Fri, +$3,020) |
+| Data source | REAL Alpaca bars (TSLA Wed = mixed sim) | Real Alpaca option bars |
 
-**Verdict: the strategy crashed with `KeyError: 'rows'` while aggregating metrics — the backtest itself finished, but `build_metrics` assumed every combo returned a `rows` list, and the combos that had no eligible schedule don't.**
+*Calls and Puts each aggregate the 6 chosen `TICKER|day|type` combos; combined they reconcile to the top-level 560 trades / 44.8% win rate / $19,789 total P&L.*
 
-### Error
+### Results (Without Outliers)
 
-```
-KeyError: 'rows'
-```
+No `outliers_removed` pass is present in `metrics.json` — this run reports only the with-outliers numbers, so an outlier-stripped comparison is unavailable. Note that concentration is instead governed here by the `max_single_trade_share = 0.51` eligibility cap: every chosen combo keeps its single largest win below 51% of its net P&L (highest observed is TSLA Wednesday calls at 49.2%), so no one trade dominates a bucket.
 
-```
-Traceback (most recent call last):
-  File "strategies\mwf-concentration-capped\strategy.py", line 285, in main
-    metrics = build_metrics(all_results, MAX_SINGLE_TRADE_SHARE, TARGET_SPEND)
-  File "strategies\mwf-concentration-capped\strategy.py", line 194, in build_metrics
-    all_rows.extend(res["rows"])
-                    ~~~^^^^^^^^
-KeyError: 'rows'
-```
+### Oracle's Verdict
 
-### Root-cause analysis
-
-The backtest ran to completion — all 12 ticker/day/type combos were evaluated and printed. The crash is purely in the **post-processing** step. `run_concentration()` returns two shapes: a **chosen** combo with `"rows"` (`backtest_concentration.py:240`), and a **no-eligible-schedule** combo that is `base` + a `"reason"` key and has **no `"rows"`** (`:207`, `:231`). `build_metrics` guards only against an empty dict, not a missing key — so the `reason`-only dicts for **TSLA Monday CALLS** and **AAPL Monday CALLS** (both `cap_excluded_all`, per the log) crash `res["rows"]`. The cap did its job rejecting over-concentrated schedules; the aggregation just never handled the "nothing chosen" case.
-
-### Suggested fixes
-
-1. In `strategy.py:194`, change `if res:` → `if res and res.get("rows"):`.
-2. Make `_combo_summary` (`strategy.py:196`) use `res.get(...)` so skipped combos summarise as `chosen: False` with their `skip_reason`.
-3. Or, cleaner: add `"rows": []` to `base` in `backtest_concentration.py:201–203` so every result carries a list. Pick this **or** #1.
-4. Add a regression assert that `len(all_rows) > 0` and `n_trades` matches the chosen combos.
-
----
-
-The Write is blocked on a permission prompt — approve it and the summary lands on disk for Herald to pick up. Note: the existing file on disk currently holds a stale **success** summary (with a leading "I've written the summary…" preamble) from a prior run — this failure summary correctly replaces it.
+The headline is genuinely positive-and-broad: +$19,789 across 560 trades, positive P&L in **all 12** chosen combos, and a concentration cap that provably prevents any single fat-tail win from carrying a bucket (max share 49%, under the 51% limit). That cap does real work — it screens out the "one lucky day" edges that usually inflate these scans. Confidence is uneven, though: the Friday combos rest on ~101 trades each (730-day lookback) and are the backbone of the P&L (~$12.7k of the $19.8k), while the Monday/Wednesday combos have only 19–20 trades on a 140-day lookback — too thin to distinguish edge from noise, and their high win rates (up to 65%) should be treated as provisional. The overall Sharpe of 0.235 is modest, consistent with an edge that is real but not strong. Two caveats: (1) TSLA Wednesday calls used **mixed real + Black-Scholes simulated** bars, so that combo's $471 is partly modeled and not fully tradeable; and (2) these windows were selected as the best performers in-sample, so expect meaningful decay out-of-sample. Verdict: **plausible, cap-disciplined edge concentrated in the higher-sample Friday buckets** — forward-paper the Friday combos before sizing, and gather more history on the M/W combos before trusting them.

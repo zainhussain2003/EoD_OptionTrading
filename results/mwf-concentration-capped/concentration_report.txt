@@ -19,80 +19,84 @@
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Monday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
-  No eligible schedule — 44 profitable schedule(s) existed, but every one had a single winning trade over the concentration cap.
+  Optimal schedule    : Buy 3:45 PM  Sell 3:55 PM   (REAL prices)
+  Win rate / total P&L: 42.1%  (8/19)   $+1,040.00
+  Single-trade share  : 46.2%   (biggest single win $481.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Monday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
-  Optimal schedule    : Buy 3:00 PM  Sell 3:10 PM   (REAL prices)
-  Win rate / total P&L: 61.1%  (11/18)   $+579.00
-  Single-trade share  : 50.4%   (biggest single win $292.00 of total P&L — cap held)
+  Optimal schedule    : Buy 3:20 PM  Sell 3:25 PM   (REAL prices)
+  Win rate / total P&L: 52.6%  (10/19)   $+332.00
+  Single-trade share  : 41.3%   (biggest single win $137.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Wednesday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:00 PM  Sell 3:10 PM   (MIXED prices)
-  Win rate / total P&L: 65.0%  (13/20)   $+473.49
-  Single-trade share  : 49.0%   (biggest single win $232.00 of total P&L — cap held)
+  Win rate / total P&L: 65.0%  (13/20)   $+471.49
+  Single-trade share  : 49.2%   (biggest single win $232.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Wednesday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:20 PM  Sell 3:25 PM   (MIXED prices)
-  Win rate / total P&L: 55.0%  (11/20)   $+601.06
-  Single-trade share  : 38.9%   (biggest single win $234.00 of total P&L — cap held)
+  Win rate / total P&L: 50.0%  (10/20)   $+584.06
+  Single-trade share  : 40.1%   (biggest single win $234.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Friday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:50 PM  Sell 3:55 PM   (REAL prices)
-  Win rate / total P&L: 42.6%  (43/101)   $+4,242.00
-  Single-trade share  : 15.9%   (biggest single win $676.00 of total P&L — cap held)
+  Win rate / total P&L: 42.6%  (43/101)   $+4,192.00
+  Single-trade share  : 16.1%   (biggest single win $676.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   TSLA Friday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 2:15 PM  Sell 3:30 PM   (REAL prices)
-  Win rate / total P&L: 45.5%  (46/101)   $+2,917.00
-  Single-trade share  : 25.5%   (biggest single win $745.00 of total P&L — cap held)
+  Win rate / total P&L: 46.5%  (47/101)   $+3,020.00
+  Single-trade share  : 24.7%   (biggest single win $745.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Monday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
-  No eligible schedule — 46 profitable schedule(s) existed, but every one had a single winning trade over the concentration cap.
+  Optimal schedule    : Buy 3:30 PM  Sell 3:35 PM   (REAL prices)
+  Win rate / total P&L: 36.8%  (7/19)   $+201.00
+  Single-trade share  : 49.8%   (biggest single win $100.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Monday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:05 PM  Sell 3:35 PM   (REAL prices)
-  Win rate / total P&L: 55.6%  (10/18)   $+1,045.00
-  Single-trade share  : 45.2%   (biggest single win $472.00 of total P&L — cap held)
+  Win rate / total P&L: 57.9%  (11/19)   $+1,102.00
+  Single-trade share  : 42.8%   (biggest single win $472.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Wednesday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:45 PM  Sell 3:55 PM   (REAL prices)
-  Win rate / total P&L: 70.0%  (14/20)   $+1,887.00
-  Single-trade share  : 27.8%   (biggest single win $525.00 of total P&L — cap held)
+  Win rate / total P&L: 65.0%  (13/20)   $+2,470.00
+  Single-trade share  : 46.6%   (biggest single win $1,150.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Wednesday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
-  Optimal schedule    : Buy 3:15 PM  Sell 3:20 PM   (REAL prices)
-  Win rate / total P&L: 55.0%  (11/20)   $+257.00
-  Single-trade share  : 40.5%   (biggest single win $104.00 of total P&L — cap held)
+  Optimal schedule    : Buy 3:15 PM  Sell 3:45 PM   (REAL prices)
+  Win rate / total P&L: 60.0%  (12/20)   $+899.00
+  Single-trade share  : 43.7%   (biggest single win $393.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Friday CALLS
 ──────────────────────────────────────────────────────────────────────────────────
   Optimal schedule    : Buy 3:40 PM  Sell 3:55 PM   (REAL prices)
-  Win rate / total P&L: 36.6%  (37/101)   $+4,418.00
-  Single-trade share  : 18.7%   (biggest single win $825.00 of total P&L — cap held)
+  Win rate / total P&L: 36.6%  (37/101)   $+4,323.00
+  Single-trade share  : 19.1%   (biggest single win $825.00 of total P&L — cap held)
 
 ──────────────────────────────────────────────────────────────────────────────────
   AAPL Friday PUTS
 ──────────────────────────────────────────────────────────────────────────────────
-  Optimal schedule    : Buy 3:20 PM  Sell 3:40 PM   (REAL prices)
-  Win rate / total P&L: 45.5%  (46/101)   $+1,391.00
-  Single-trade share  : 44.9%   (biggest single win $625.00 of total P&L — cap held)
+  Optimal schedule    : Buy 3:15 PM  Sell 3:40 PM   (REAL prices)
+  Win rate / total P&L: 39.6%  (40/101)   $+1,154.00
+  Single-trade share  : 38.1%   (biggest single win $440.00 of total P&L — cap held)
 
