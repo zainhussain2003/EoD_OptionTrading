@@ -1,0 +1,49 @@
+{
+  "status": "ok",
+  "strategy": "PLCheck",
+  "ticker": "TSLA",
+  "option_type": "CALL",
+  "entry_time": "3:45 PM ET",
+  "exit_time": "3:55 PM ET",
+  "lookback_days": 730,
+  "per_trade_budget": 100.0,
+  "sizing_rule": "contracts = MAX(1, CEILING(budget / (entry_price * 100)))",
+  "n_trades": 98,
+  "n_skipped": 7,
+  "wins": 43,
+  "losses": 55,
+  "win_rate": 0.4388,
+  "total_pnl": 4187.0,
+  "avg_pnl": 42.72,
+  "biggest_win": 1400.0,
+  "biggest_loss": -384.0,
+  "gross_profit": 6823.0,
+  "gross_loss": -2636.0,
+  "profit_concentration": 0.2052,
+  "loss_concentration": 0.1457,
+  "premium_spent": 45449.0,
+  "return_on_spend": 0.0921,
+  "max_drawdown": -589.0,
+  "sharpe": 0.218,
+  "total_contracts": 2749,
+  "data_source": "REAL Alpaca option bars",
+  "config": {
+    "tickers": [
+      "TSLA"
+    ],
+    "option_types": [
+      "C"
+    ],
+    "risk_free_rate": 0.05,
+    "backtest_days": 730,
+    "timezone": "America/New_York",
+    "entry_minute": 945,
+    "exit_minute": 955,
+    "price_tolerance_minutes": 3,
+    "per_trade_budget": 100.0,
+    "window_start_minute": 570,
+    "window_end_minute": 960,
+    "trades_csv": "trades.csv"
+  },
+  "generated_at": "2026-07-19T06:40:49.897026+00:00"
+}
