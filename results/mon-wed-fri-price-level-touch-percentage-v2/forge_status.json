@@ -1,0 +1,8 @@
+{
+  "strategy": "mon-wed-fri-price-level-touch-percentage-v2",
+  "started_at": "2026-08-13T16:05:14.396022+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-08-13T16:11:07.187301+00:00"
+}
