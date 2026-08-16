@@ -1,0 +1,8 @@
+{
+  "strategy": "all-weekdays-price-level-touch-percentage",
+  "started_at": "2026-08-16T20:11:58.843391+00:00",
+  "strategy_ok": true,
+  "returncode": 0,
+  "metrics_status": "ok",
+  "finished_at": "2026-08-16T20:22:10.319147+00:00"
+}
